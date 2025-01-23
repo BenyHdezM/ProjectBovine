@@ -1,40 +1,30 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-
-let mainWindow;
+const { app, BrowserWindow } = require('electron')
 
 const createWindow = () => {
-    mainWindow = new BrowserWindow({
+    const win = new BrowserWindow({
         width: 800,
-        height: 600,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false,
-        },
-    });
+        height: 600
+    })
 
-    const startUrl = path.join(__dirname, 'dist/index.html');
-    mainWindow.loadFile(startUrl);
-};
+    win.loadFile('dist/index.html')
+    win.setMenuBarVisibility(false);
+}
 
-app.on('ready', createWindow);
+app.whenReady().then(() => {
+    createWindow()
+})
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') app.quit();
-});
+    if (process.platform !== 'darwin') app.quit()
+})
 
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
-
-
-const db = require('./database');
+const db = require('./database.js');
 
 db.serialize(() => {
-    db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)');
-    db.run('INSERT INTO users (name) VALUES (?)', ['John Doe'], function(err) {
-        if (err) console.error(err.message);
-        else console.log(`Inserted row with ID: ${this.lastID}`);
-    });
+    db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)'); //Create a Table
+    //This is an Example for Insert value on SQLite
+    // db.run('INSERT INTO users (name) VALUES (?)', ['John Doe'], function(err) {
+    //     if (err) console.error(err.message);
+    //     else console.log(`Inserted row with ID: ${this.lastID}`);
+    // });
 });
