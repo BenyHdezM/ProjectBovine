@@ -8,6 +8,7 @@ const createWindow = () => {
 
     win.loadFile('dist/index.html')
     win.setMenuBarVisibility(false);
+    win.maximize();
 }
 
 app.whenReady().then(() => {
