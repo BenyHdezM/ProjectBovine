@@ -1,0 +1,83 @@
+# FVM
+.fvm/
+.fvmrc
+
+# Flutter build artifacts
+build/
+.dart_tool/
+pubspec.lock
+*.iml
+
+# IDE / IDE-related files
+.idea/
+.vscode/
+*.swp
+*.sor
+.project
+.classpath
+.settings/
+.project
+.DS_Store
+
+# Android Studio / Gradle
+android/.gradle
+android/local.properties
+android/*.keystore
+android/.idea/
+android/*/src/main/assets/
+android/app/build.gradle
+android/app/build/
+android/app/*.properties
+android/local.properties
+
+# iOS
+ios/.idea/
+*.xcworkspace
+*.xcuserdata
+ios/Pods/
+ios/flutter/AppDelegate.swift
+ios/Flutter/LocalSettings.xcconfig
+
+# Web
+web/assets/
+web/index_cloudflare.html
+
+# Linux
+linux/.idea/
+linux/flutter/ephemeral/.symlinks/plugins/
+
+# macOS (if applicable)
+macos/.idea/
+macos/Flutter/GeneratedPlugins.swift
+
+# Windows
+windows/.idea/
+windows/flutter/ephemeral/.symlinks/plugins/
+
+# Coverage
+coverage/
+*.lcov
+
+# Kernel
+**/*.kernel
+
+# Flutter plugin references
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Generated files
+lib/generated_*.dart
+lib/*_providers.dart.gzip
+lib/*_generated*.dart
+
+# Environment variables (optional, if you have secrets)
+#.env
+#*.env.local
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+Thumbs.db
+Desktop.ini
