@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/database/app_database.dart';
 import '../features/bovinos/presentation/screens/bovino_form_screen.dart';

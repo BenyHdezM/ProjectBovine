@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../../../../core/providers/database_provider.dart';
@@ -24,6 +26,11 @@ final lotesListProvider = StreamProvider<List<Lote>>((ref) {
   return ref.watch(appDatabaseProvider).bovinosDao.watchAllLotes();
 });
 
+final fotosByBovinoProvider =
+    StreamProvider.family<List<Foto>, int>((ref, bovinoId) {
+  return ref.watch(appDatabaseProvider).fotosDao.watchFotosByBovinoId(bovinoId);
+});
+
 // ─── Formulario de bovino ────────────────────────────────────────────────────
 
 class BovinoFormNotifier extends AsyncNotifier<void> {
@@ -35,11 +42,15 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
     int? duenoId,
     int? editId,
     DateTime? fechaVenta,
+    List<File> newPhotoFiles = const [],
+    List<int> deletedPhotoIds = const [],
   }) async {
     state = const AsyncLoading();
 
     try {
       final dao = ref.read(appDatabaseProvider).bovinosDao;
+      final fotosDao = ref.read(appDatabaseProvider).fotosDao;
+
       // Validar unicidad de arete_id
       final existente = await dao.findByAreteId(bovino.areteId.value);
       if (existente != null && existente.id != editId) {
@@ -73,6 +84,66 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
       if (bovino.estado.value == 'vendido' && fechaVenta != null) {
         await dao.upsertVenta(bovinoId, fechaVenta);
       }
+
+      // Eliminar fotos marcadas para borrado
+      for (final photoId in deletedPhotoIds) {
+        final foto = await fotosDao.getFotoById(photoId);
+        await fotosDao.deleteFoto(photoId);
+        if (foto != null) {
+          try {
+            final file = File(foto.rutaFoto);
+            if (await file.exists()) await file.delete();
+          } catch (_) {}
+        }
+      }
+
+      // Guardar fotos nuevas
+      if (newPhotoFiles.isNotEmpty) {
+        final appDir = await getApplicationDocumentsDirectory();
+        final bovDir = Directory('${appDir.path}/bovinos/$bovinoId');
+        await bovDir.create(recursive: true);
+        for (final file in newPhotoFiles) {
+          final ext = file.path.split('.').last;
+          final newPath =
+              '${bovDir.path}/${DateTime.now().microsecondsSinceEpoch}.$ext';
+          await file.copy(newPath);
+          await fotosDao.insertFoto(FotosCompanion(
+            bovinoId: Value(bovinoId),
+            rutaFoto: Value(newPath),
+          ));
+        }
+      }
+
+      state = const AsyncData(null);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return e.toString();
+    }
+  }
+
+  Future<String?> deleteBovino(int id) async {
+    state = const AsyncLoading();
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final fotos = await db.fotosDao.getFotosByBovinoId(id);
+
+      // Borrar archivos físicos
+      for (final foto in fotos) {
+        try {
+          final file = File(foto.rutaFoto);
+          if (await file.exists()) await file.delete();
+        } catch (_) {}
+      }
+
+      // Borrar carpeta del bovino si quedó vacía u orfana
+      final appDir = await getApplicationDocumentsDirectory();
+      final bovDir = Directory('${appDir.path}/bovinos/$id');
+      if (await bovDir.exists()) {
+        try { await bovDir.delete(recursive: true); } catch (_) {}
+      }
+
+      await db.bovinosDao.deleteBovinoWithChildren(id);
 
       state = const AsyncData(null);
       return null;

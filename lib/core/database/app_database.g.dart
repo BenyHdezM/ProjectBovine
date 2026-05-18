@@ -3988,6 +3988,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FotosTable fotos = $FotosTable(this);
   late final BovinosDao bovinosDao = BovinosDao(this as AppDatabase);
   late final DuenosDao duenosDao = DuenosDao(this as AppDatabase);
+  late final FotosDao fotosDao = FotosDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();

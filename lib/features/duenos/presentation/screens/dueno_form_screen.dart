@@ -62,16 +62,19 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
     );
 
     if (confirm == true && mounted) {
+      final messenger = ScaffoldMessenger.of(context);
       try {
         final db = ref.read(appDatabaseProvider);
         await db.duenosDao.deleteDuenoClean(id);
-        if (context.mounted) context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dueño eliminado')),
-        );
+        if (mounted) {
+          context.pop();
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Dueño eliminado')),
+          );
+        }
       } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+        if (mounted) {
+          messenger.showSnackBar(
             SnackBar(content: Text('Error al eliminar: $e')),
           );
         }

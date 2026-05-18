@@ -92,12 +92,12 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
   /// Elimina un bovino y todos sus registros relacionados.
   Future<void> deleteBovinoWithChildren(int id) async {
     await transaction(() async {
-      // Tablas hijas directas de Bovinos (eliminar todas las filas)
-      await delete(db.vacunas).go();
-      await delete(db.tratamientos).go();
-      await delete(db.partos).go();
-      await delete(db.fotos).go();
-      await delete(db.ventas).go();
+      // Tablas hijas directas de Bovinos
+      await (delete(db.vacunas)..where((v) => v.bovinoId.equals(id))).go();
+      await (delete(db.tratamientos)..where((t) => t.bovinoId.equals(id))).go();
+      await (delete(db.partos)..where((p) => p.bovinoId.equals(id))).go();
+      await (delete(db.fotos)..where((f) => f.bovinoId.equals(id))).go();
+      await (delete(db.ventas)..where((v) => v.bovinoId.equals(id))).go();
 
       // Registro reproductivo (bovinoId)
       await (delete(db.registroReproductivo)

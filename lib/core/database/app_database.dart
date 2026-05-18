@@ -18,6 +18,7 @@ import 'tables/vacunas_table.dart';
 import 'tables/ventas_table.dart';
 import 'daos/bovinos_dao.dart';
 import 'daos/duenos_dao.dart';
+import 'daos/fotos_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -37,7 +38,7 @@ part 'app_database.g.dart';
     RegistroReproductivo,
     Fotos,
   ],
-  daos: [BovinosDao, DuenosDao],
+  daos: [BovinosDao, DuenosDao, FotosDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());

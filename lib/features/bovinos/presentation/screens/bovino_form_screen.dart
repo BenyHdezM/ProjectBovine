@@ -1,10 +1,12 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/providers/database_provider.dart';
 import '../providers/bovinos_providers.dart';
 
 class BovinoFormScreen extends ConsumerStatefulWidget {
@@ -19,6 +21,7 @@ class BovinoFormScreen extends ConsumerStatefulWidget {
 class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _dateFormat = DateFormat('dd/MM/yyyy');
+  final _picker = ImagePicker();
 
   late final TextEditingController _areteCtrl;
   late final TextEditingController _nombreCtrl;
@@ -32,6 +35,9 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   int? _loteId;
   int? _razaId;
   int? _duenoId;
+
+  final List<File> _newPhotoFiles = [];
+  final Set<int> _deletedPhotoIds = {};
 
   bool get _esEdicion => widget.bovino != null;
 
@@ -86,6 +92,52 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     }
   }
 
+  Future<void> _pickFromCamera() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (picked != null) {
+      setState(() => _newPhotoFiles.add(File(picked.path)));
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    final picked = await _picker.pickMultiImage(imageQuality: 80);
+    if (picked.isNotEmpty) {
+      setState(() => _newPhotoFiles.addAll(picked.map((x) => File(x.path))));
+    }
+  }
+
+  void _showPhotoSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Cámara'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromCamera();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galería'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromGallery();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _deleteBovino(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -111,20 +163,18 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     );
 
     if (confirm == true && mounted) {
-      try {
-        final db = ref.read(appDatabaseProvider);
-        await db.bovinosDao.deleteBovinoWithChildren(id);
-        if (context.mounted) context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bovino eliminado')),
-        );
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
-        }
+      final error =
+          await ref.read(bovinoFormProvider.notifier).deleteBovino(id);
+      if (!mounted) return;
+      if (error != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error al eliminar: $error')));
+        return;
       }
+      if (context.mounted) context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bovino eliminado')),
+      );
     }
   }
 
@@ -153,6 +203,8 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
           duenoId: _duenoId,
           editId: widget.bovino?.id,
           fechaVenta: _estado == 'vendido' ? _fechaVenta : null,
+          newPhotoFiles: _newPhotoFiles,
+          deletedPhotoIds: _deletedPhotoIds.toList(),
         );
 
     if (!mounted) return;
@@ -164,12 +216,74 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     context.pop();
   }
 
+  Widget _buildFotosSection(AsyncValue<List<Foto>>? fotosAsync) {
+    final existingPhotos = _esEdicion
+        ? (fotosAsync?.value ?? [])
+            .where((f) => !_deletedPhotoIds.contains(f.id))
+            .toList()
+        : <Foto>[];
+    final isEmpty = existingPhotos.isEmpty && _newPhotoFiles.isEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('Fotos',
+                style: TextStyle(fontWeight: FontWeight.w500)),
+            const Spacer(),
+            TextButton.icon(
+              icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+              label: const Text('Agregar'),
+              onPressed: _showPhotoSourceSheet,
+            ),
+          ],
+        ),
+        if (isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Text(
+                'Sin fotos — toca Agregar para subir una',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                    fontSize: 13),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 110,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                ...existingPhotos.map((foto) => _PhotoThumb(
+                      imageProvider: FileImage(File(foto.rutaFoto)),
+                      onDelete: () =>
+                          setState(() => _deletedPhotoIds.add(foto.id)),
+                    )),
+                ..._newPhotoFiles.map((file) => _PhotoThumb(
+                      imageProvider: FileImage(file),
+                      isNew: true,
+                      onDelete: () =>
+                          setState(() => _newPhotoFiles.remove(file)),
+                    )),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lotesAsync = ref.watch(lotesListProvider);
     final razasAsync = ref.watch(razasListProvider);
     final duenosAsync = ref.watch(duenosListProvider);
     final isLoading = ref.watch(bovinoFormProvider).isLoading;
+    final fotosAsync = _esEdicion
+        ? ref.watch(fotosByBovinoProvider(widget.bovino!.id))
+        : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -194,6 +308,11 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // ── Fotos ─────────────────────────────────────────────────────
+                _buildFotosSection(fotosAsync),
+                const Divider(),
+                const SizedBox(height: 12),
+
                 // ── Arete ID ────────────────────────────────────────────────
                 TextFormField(
                   controller: _areteCtrl,
@@ -252,7 +371,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                   loading: () => const LinearProgressIndicator(),
                   error: (_, __) => const SizedBox(),
                   data: (lotes) => DropdownButtonFormField<int>(
-                    value: _loteId,
+                    initialValue: _loteId,
                     decoration: const InputDecoration(
                       labelText: 'Lote',
                       prefixIcon: Icon(Icons.category_outlined),
@@ -279,7 +398,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                           onPressed: null,
                         )
                       : DropdownButtonFormField<int>(
-                          value: _razaId,
+                          initialValue: _razaId,
                           decoration: const InputDecoration(
                             labelText: 'Raza',
                             prefixIcon: Icon(Icons.biotech_outlined),
@@ -314,7 +433,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: _duenoId,
+                          initialValue: _duenoId,
                           decoration: InputDecoration(
                             labelText: _esEdicion
                                 ? 'Cambiar dueño'
@@ -431,6 +550,78 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PhotoThumb extends StatelessWidget {
+  const _PhotoThumb({
+    required this.imageProvider,
+    required this.onDelete,
+    this.isNew = false,
+  });
+
+  final ImageProvider imageProvider;
+  final VoidCallback onDelete;
+  final bool isNew;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image(
+              image: imageProvider,
+              width: 100,
+              height: 100,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 100,
+                height: 100,
+                color: Colors.grey.shade200,
+                child: const Icon(Icons.broken_image_outlined),
+              ),
+            ),
+          ),
+          if (isNew)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'Nueva',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

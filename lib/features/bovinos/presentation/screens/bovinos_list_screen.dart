@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/database_provider.dart';
 import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../../../../core/database/seeds/seed_test_data.dart';
@@ -52,20 +51,16 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
     );
 
     if (confirm == true && mounted) {
-      try {
-        final db = ref.read(appDatabaseProvider);
-        await db.bovinosDao.deleteBovinoWithChildren(item.bovino.id);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Borrado "${item.bovino.areteId}"')),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
-        }
+      final messenger = ScaffoldMessenger.of(context);
+      final error = await ref
+          .read(bovinoFormProvider.notifier)
+          .deleteBovino(item.bovino.id);
+      if (mounted) {
+        messenger.showSnackBar(
+          error != null
+              ? SnackBar(content: Text('Error al eliminar: $error'))
+              : SnackBar(content: Text('Borrado "${item.bovino.areteId}"')),
+        );
       }
     }
   }
@@ -309,7 +304,7 @@ class _FiltroChip extends StatelessWidget {
         label: Text(label),
         selected: selected,
         onSelected: (_) => onTap(),
-        selectedColor: c.withOpacity(0.2),
+        selectedColor: c.withValues(alpha: 0.2),
         checkmarkColor: c,
         labelStyle: TextStyle(
           color: selected ? c : null,
