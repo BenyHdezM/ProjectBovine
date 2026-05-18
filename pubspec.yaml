@@ -1,0 +1,38 @@
+name: vacuno_app
+description: "Aplicación para control de inventario de ganado bovino."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Base de datos
+  drift: ^2.18.0
+  drift_flutter: ^0.2.0
+  sqlite3_flutter_libs: ^0.5.24
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navegación
+  go_router: ^14.2.7
+
+  # Utilidades
+  intl: ^0.19.0
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  build_runner: ^2.4.11
+  drift_dev: ^2.18.0
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
