@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/providers/database_provider.dart';
 import '../providers/duenos_providers.dart';
 
 class DuenoFormScreen extends ConsumerStatefulWidget {
@@ -36,6 +37,48 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
     super.dispose();
   }
 
+  Future<void> _deleteDueno(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar Dueño'),
+        content: const Text(
+            '¿Estás seguro de eliminar este dueño? Se borrarán las relaciones con los bovinos.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Eliminar'),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        final db = ref.read(appDatabaseProvider);
+        await db.duenosDao.deleteDuenoClean(id);
+        if (context.mounted) context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dueño eliminado')),
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -66,6 +109,16 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_esEdicion ? 'Editar Dueño' : 'Nuevo Dueño'),
+        actions: _esEdicion
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Eliminar',
+                  color: Theme.of(context).colorScheme.error,
+                  onPressed: () => _deleteDueno(widget.dueno!.id),
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -96,20 +149,42 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: isLoading ? null : _submit,
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save_outlined),
-                  label: Text(isLoading
-                      ? 'Guardando…'
-                      : _esEdicion
-                          ? 'Guardar cambios'
-                          : 'Registrar Dueño'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: isLoading ? null : _submit,
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save_outlined),
+                        label: Text(isLoading
+                            ? 'Guardando…'
+                            : _esEdicion
+                                ? 'Guardar cambios'
+                                : 'Registrar Dueño'),
+                      ),
+                    ),
+                    if (_esEdicion) ...[
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : () => _deleteDueno(widget.dueno!.id),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Eliminar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

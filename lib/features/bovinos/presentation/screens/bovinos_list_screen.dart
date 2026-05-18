@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/database/app_database.dart';
+import '../../../../core/providers/database_provider.dart';
 import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../../../../core/database/seeds/seed_test_data.dart';
-import '../../../../core/providers/database_provider.dart';
 import '../providers/bovinos_providers.dart';
 
 class BovinosListScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,49 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _deleteBovino(BovinoWithDueno item) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar Bovino'),
+        content: Text(
+            '¿Borrar "${item.bovino.areteId}"${item.bovino.nombre != null ? ' (${item.bovino.nombre})' : ''}? Esta acción eliminará también todas las vacunas, tratamientos y registros asociados.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Eliminar'),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        final db = ref.read(appDatabaseProvider);
+        await db.bovinosDao.deleteBovinoWithChildren(item.bovino.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Borrado "${item.bovino.areteId}"')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
   }
 
   List<BovinoWithDueno> _filtrar(List<BovinoWithDueno> todos) {
@@ -102,7 +146,10 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
                 child: bovinos.isEmpty
                     ? _EmptyState(hayFiltros: _searchQuery.isNotEmpty ||
                         _estadoFilter != null || _sexoFilter != null)
-                    : _AdaptiveList(bovinos: bovinos),
+                    : _AdaptiveList(
+                        bovinos: bovinos,
+                        onDelete: _deleteBovino,
+                      ),
               ),
             ],
           );
@@ -307,20 +354,21 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ─── Lista adaptativa ─────────────────────────────────────────────────────────
+// ─── Lista adaptiva ─────────────────────────────────────────────────────────
 
 class _AdaptiveList extends StatelessWidget {
   final List<BovinoWithDueno> bovinos;
-  const _AdaptiveList({required this.bovinos});
+  final void Function(BovinoWithDueno) onDelete;
+  const _AdaptiveList({required this.bovinos, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 640) {
-          return _BovinosDataTable(bovinos: bovinos);
+          return _BovinosDataTable(bovinos: bovinos, onDelete: onDelete);
         }
-        return _BovinosListView(bovinos: bovinos);
+        return _BovinosListView(bovinos: bovinos, onDelete: onDelete);
       },
     );
   }
@@ -330,7 +378,8 @@ class _AdaptiveList extends StatelessWidget {
 
 class _BovinosDataTable extends StatelessWidget {
   final List<BovinoWithDueno> bovinos;
-  const _BovinosDataTable({required this.bovinos});
+  final void Function(BovinoWithDueno) onDelete;
+  const _BovinosDataTable({required this.bovinos, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -348,7 +397,7 @@ class _BovinosDataTable extends StatelessWidget {
             DataColumn(label: Text('Dueño')),
             DataColumn(label: Text('Sexo')),
             DataColumn(label: Text('Estado')),
-            DataColumn(label: Text('')),
+            DataColumn(label: Text('Acciones')),
           ],
           rows: bovinos
               .map(
@@ -359,15 +408,25 @@ class _BovinosDataTable extends StatelessWidget {
                     DataCell(Text(item.dueno?.nombre ?? '—')),
                     DataCell(Text(item.bovino.sexo)),
                     DataCell(_EstadoChip(estado: item.bovino.estado)),
-                    DataCell(
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => context.push(
-                          '/bovinos/${item.bovino.id}',
-                          extra: item.bovino,
+                    DataCell(Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          tooltip: 'Editar',
+                          onPressed: () => context.push(
+                            '/bovinos/${item.bovino.id}',
+                            extra: item.bovino,
+                          ),
                         ),
-                      ),
-                    ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          tooltip: 'Eliminar',
+                          color: Theme.of(context).colorScheme.error,
+                          onPressed: () => onDelete(item),
+                        ),
+                      ],
+                    )),
                   ],
                 ),
               )
@@ -382,7 +441,8 @@ class _BovinosDataTable extends StatelessWidget {
 
 class _BovinosListView extends StatelessWidget {
   final List<BovinoWithDueno> bovinos;
-  const _BovinosListView({required this.bovinos});
+  final void Function(BovinoWithDueno) onDelete;
+  const _BovinosListView({required this.bovinos, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -415,7 +475,27 @@ class _BovinosListView extends StatelessWidget {
               if (item.dueno != null) 'Dueño: ${item.dueno!.nombre}',
             ].join(' · '),
           ),
-          trailing: _EstadoChip(estado: item.bovino.estado),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _EstadoChip(estado: item.bovino.estado),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Editar',
+                onPressed: () => context.push(
+                  '/bovinos/${item.bovino.id}',
+                  extra: item.bovino,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Eliminar',
+                color: Theme.of(context).colorScheme.error,
+                onPressed: () => onDelete(item),
+              ),
+            ],
+          ),
           onTap: () => context.push(
             '/bovinos/${item.bovino.id}',
             extra: item.bovino,

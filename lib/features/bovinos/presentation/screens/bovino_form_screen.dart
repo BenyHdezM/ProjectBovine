@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/providers/database_provider.dart';
 import '../providers/bovinos_providers.dart';
 
 class BovinoFormScreen extends ConsumerStatefulWidget {
@@ -85,6 +86,48 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     }
   }
 
+  Future<void> _deleteBovino(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar Bovino'),
+        content: const Text(
+            '¿Estás seguro de eliminar este bovino? Se borrarán todas las vacunas, tratamientos y registros asociados.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Eliminar'),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        final db = ref.read(appDatabaseProvider);
+        await db.bovinosDao.deleteBovinoWithChildren(id);
+        if (context.mounted) context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bovino eliminado')),
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar: $e')),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -126,12 +169,21 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     final lotesAsync = ref.watch(lotesListProvider);
     final razasAsync = ref.watch(razasListProvider);
     final duenosAsync = ref.watch(duenosListProvider);
-    final isLoading =
-        ref.watch(bovinoFormProvider).isLoading;
+    final isLoading = ref.watch(bovinoFormProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_esEdicion ? 'Editar Bovino' : 'Nuevo Bovino'),
+        actions: _esEdicion
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Eliminar',
+                  color: Theme.of(context).colorScheme.error,
+                  onPressed: () => _deleteBovino(widget.bovino!.id),
+                ),
+              ]
+            : null,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -337,21 +389,43 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                   const SizedBox(height: 20),
                 ],
 
-                // ── Botón guardar ─────────────────────────────────────────────
-                FilledButton.icon(
-                  onPressed: isLoading ? null : _submit,
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save_outlined),
-                  label: Text(isLoading
-                      ? 'Guardando…'
-                      : _esEdicion
-                          ? 'Guardar cambios'
-                          : 'Registrar Bovino'),
+                // ── Botones ────────────────────────────────────────────────
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: isLoading ? null : _submit,
+                        icon: isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.save_outlined),
+                        label: Text(isLoading
+                            ? 'Guardando…'
+                            : _esEdicion
+                                ? 'Guardar cambios'
+                                : 'Registrar Bovino'),
+                      ),
+                    ),
+                    if (_esEdicion) ...[
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : () => _deleteBovino(widget.bovino!.id),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Eliminar'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Theme.of(context).colorScheme.error,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

@@ -2,15 +2,23 @@ import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables/bovinos_table.dart';
 import '../tables/duenos_table.dart';
+import '../tables/fotos_table.dart';
 import '../tables/lotes_table.dart';
+import '../tables/partos_table.dart';
 import '../tables/pertenencia_table.dart';
+import '../tables/progenie_table.dart';
 import '../tables/razas_table.dart';
+import '../tables/registro_reproductivo_table.dart';
+import '../tables/toros_table.dart';
+import '../tables/tratamientos_table.dart';
+import '../tables/vacunas_table.dart';
 import '../tables/ventas_table.dart';
 import '../models/bovino_with_dueno.dart';
 
 part 'bovinos_dao.g.dart';
 
-@DriftAccessor(tables: [Bovinos, Pertenencia, Duenos, Razas, Lotes, Ventas])
+@DriftAccessor(
+    tables: [Bovinos, Pertenencia, Duenos, Razas, Lotes, Ventas, Vacunas, Tratamientos, Partos, Toros, Progenie, RegistroReproductivo, Fotos])
 class BovinosDao extends DatabaseAccessor<AppDatabase>
     with _$BovinosDaoMixin {
   BovinosDao(super.db);
@@ -80,6 +88,42 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteBovino(int id) =>
       (delete(db.bovinos)..where((b) => b.id.equals(id))).go();
+
+  /// Elimina un bovino y todos sus registros relacionados.
+  Future<void> deleteBovinoWithChildren(int id) async {
+    await transaction(() async {
+      // Tablas hijas directas de Bovinos (eliminar todas las filas)
+      await delete(db.vacunas).go();
+      await delete(db.tratamientos).go();
+      await delete(db.partos).go();
+      await delete(db.fotos).go();
+      await delete(db.ventas).go();
+
+      // Registro reproductivo (bovinoId)
+      await (delete(db.registroReproductivo)
+            ..where((r) => r.bovinoId.equals(id)))
+          .go();
+
+      // Toros (bovinoId)
+      await (delete(db.toros)..where((t) => t.bovinoId.equals(id))).go();
+
+      // Progenie como hijo
+      await (delete(db.progenie)..where((p) => p.bovinoId.equals(id))).go();
+
+      // Progenie como padre/madre
+      await (delete(db.progenie)
+            ..where((p) =>
+                p.bovinoPadreId.equals(id) | p.bovinaMadreId.equals(id)))
+          .go();
+
+      // Pertenencia
+      await (delete(db.pertenencia)
+            ..where((p) => p.bovinoId.equals(id))).go();
+
+      // Finalmente el bovino
+      await (db.delete(db.bovinos)..where((b) => b.id.equals(id))).go();
+    });
+  }
 
   /// Inserta o actualiza el registro de venta para un bovino.
   Future<void> upsertVenta(int bovinoId, DateTime fechaVenta) async {
