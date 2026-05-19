@@ -188,6 +188,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   Future<void> _submit() async {
     setState(() => _showErrors = true);
     if (!_formKey.currentState!.validate()) return;
+    if (_fechaNacimiento == null) return;
     if (_estado == 'muerto' && _fechaMuerte == null) return;
     if (_estado == 'vendido' && _fechaVenta == null) return;
 
@@ -334,13 +335,12 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 TextFormField(
                   controller: _areteCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Arete ID *',
+                    labelText: 'Arete ID',
                     prefixIcon: Icon(Icons.tag),
+                    helperText: 'Opcional — debe ser único',
                   ),
                   textCapitalization: TextCapitalization.characters,
                   inputFormatters: [NoAccentFormatter()],
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -348,12 +348,13 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 TextFormField(
                   controller: _numRegistroCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Núm. Registro',
+                    labelText: 'Núm. Registro *',
                     prefixIcon: Icon(Icons.numbers_outlined),
-                    helperText: 'Opcional — solo números positivos',
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
 
@@ -387,12 +388,20 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 // ── Fecha de nacimiento ───────────────────────────────────────
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.cake_outlined),
-                  title: const Text('Fecha de nacimiento'),
+                  leading: Icon(
+                    Icons.cake_outlined,
+                    color: (_showErrors && _fechaNacimiento == null)
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                  ),
+                  title: const Text('Fecha de nacimiento *'),
                   subtitle: Text(
                     _fechaNacimiento != null
                         ? _dateFormat.format(_fechaNacimiento!)
-                        : 'No especificada',
+                        : (_showErrors ? 'Requerida' : 'No especificada'),
+                    style: (_showErrors && _fechaNacimiento == null)
+                        ? TextStyle(color: Theme.of(context).colorScheme.error)
+                        : null,
                   ),
                   onTap: () => _pickDate(context, field: _DateField.nacimiento),
                 ),
