@@ -43,31 +43,52 @@ lib/
 
 ### Database (Drift)
 
-`AppDatabase` in `lib/core/database/app_database.dart` defines 13 tables. Each table is a separate file under `lib/core/database/tables/`. Key tables:
+`AppDatabase` in `lib/core/database/app_database.dart` defines 13 tables. Each table is a separate file under `lib/core/database/tables/`. Tables grouped by concern:
 
-- **Bovinos** — core cattle record (areteId, nombre, sexo, estado, loteId, razaId)
-- **Pertenencia** — ownership history; `fechaFin IS NULL` means current owner
-- **Lotes** — lot categories with predefined clave values: R, O, H, E
+**Core cattle & ownership:**
+- **Bovinos** — cattle record (areteId UNIQUE, nombre, sexo: M/H, estado: activo/vendido/muerto, loteId, razaId)
+- **Pertenencia** — ownership history; `fechaFin IS NULL` = current owner
+- **Lotes** — lot categories; seeded with 4 records (clave: R, O, H, E)
+- **Razas** — cattle breeds; seeded with 20 breeds (Angus, Hereford, etc.) on first DB creation
+- **Duenos** — owners (nombre, telefono)
+
+**Reproduction subsystem** (tables defined, UI not fully integrated):
+- **Progenie** — lineage (bovinoPadreId, bovinaMadreId → bovinoId; UNIQUE per offspring)
+- **Toros** — bull designation (UNIQUE bovinoId)
+- **Partos** — birth events
+- **RegistroReproductivo** — breeding events (tipo, fechaProbableParto, toroId)
+
+**Health & commerce:**
+- **Vacunas** — vaccination records (nombreVacuna, fechaAplicacion, proximaDosis)
+- **Tratamientos** — medical treatments (veterinario, fecha)
 - **Ventas** — auto-populated when bovino estado → "vendido"
+- **Fotos** — photo attachments; `rutaFoto` stores local filesystem path (captured via `image_picker`, stored via `path_provider`)
 
 After changing any table class or DAO, run `build_runner build` to regenerate `.g.dart` files.
+
+### DAOs
+
+**BovinosDao** (`lib/core/database/daos/bovinos_dao.dart`):
+- `watchBovinosWithDueno()` — main reactive stream via LEFT JOIN on Pertenencia/Duenos
+- `insertBovinoWithDueno()` — transaction: creates Bovino + optional initial Pertenencia row
+- `transferirDueno()` — sets fechaFin on current Pertenencia, opens new one (audit trail preserved)
+- `upsertVenta()` — called automatically when estado changes to "vendido"
+- `deleteBovinoWithChildren()` — cascade deletes all related records in dependency order (handles Progenie's dual FK as both padre/madre and hijo)
+
+**DuenosDao** (`lib/core/database/daos/duenos_dao.dart`):
+- `watchAllDuenos()`, `getAllDuenos()` — ordered by nombre
+- `deleteDuenoClean()` — deletes Pertenencia records before deleting owner
+
+**FotosDao** (`lib/core/database/daos/fotos_dao.dart`):
+- `watchFotosByBovinoId()`, `insertFoto()`, `deleteFoto()`
 
 ### State Management
 
 Riverpod `StreamProvider`s in `lib/features/*/presentation/providers/` expose Drift watch streams directly to the UI. Form state uses `AsyncNotifier` (e.g. `BovinoFormNotifier`) which handles validation, transactions, and ownership transfers.
 
-### BovinosDao
-
-`lib/core/database/daos/bovinos_dao.dart` contains the critical queries:
-
-- `watchBovinosWithDueno()` — main reactive stream using LEFT JOIN via `Pertenencia`
-- `insertBovinoWithDueno()` — transaction that creates Bovino + initial Pertenencia row
-- `transferirDueno()` — closes current Pertenencia (sets fechaFin) and opens a new one
-- `upsertVenta()` — called automatically when estado changes to "vendido"
-
 ### Navigation
 
-`lib/app/router.dart` uses GoRouter. Edit forms receive the full `BovinoWithDueno` object via `extra` (not just an ID) to avoid an extra DB lookup on navigation.
+`lib/app/router.dart` uses GoRouter. Edit forms receive the full model object (`BovinoWithDueno`, `Dueno`) via `extra` — not just an ID — to avoid a DB lookup on navigation.
 
 ### UI Patterns
 

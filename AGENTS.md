@@ -19,7 +19,19 @@ fvm flutter analyze
 fvm flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-## Architecture
+## Commit Conventions
+
+Se usa [Conventional Commits](https://www.conventionalcomm.org/) con descripciones en español:
+
+| Tipo      | Descripción                          | Ejemplo                                              |
+|-----------|--------------------------------------|------------------------------------------------------|
+| `feat`    | Nueva funcionalidad                  | `feat: agregar gestión de fotos para bovinos`        |
+| `fix`     | Corrección de bug                    | `fix: validar fecha de nacimiento en formulario`     |
+| `chore`   | Tareas generales, deps, config       | `chore: actualizar dependencia drift a 3.0`          |
+| `refactor`| Cambio de código sin cambiar behavior| `refactor: renomzar variable loteId por granjaId`    |
+| `docs`    | Documentación (README, AGENTS.md)    | `docs: agregar guía de setup en README`              |
+
+Formato: `<tipo>: <descripción en español, minúscula>`
 
 Feature-based structure under `lib/`:
 
