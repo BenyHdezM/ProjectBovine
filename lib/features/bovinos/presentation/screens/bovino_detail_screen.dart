@@ -70,8 +70,17 @@ class BovinoDetailScreen extends ConsumerWidget {
                                   child: ListView(
                                     scrollDirection: Axis.horizontal,
                                     children: fotos
-                                        .map((foto) => _PhotoThumb(
-                                              path: foto.rutaFoto,
+                                        .asMap()
+                                        .entries
+                                        .map((e) => _PhotoThumb(
+                                              path: e.value.rutaFoto,
+                                              onTap: () => _showPhotoViewer(
+                                                context,
+                                                fotos
+                                                    .map((f) => f.rutaFoto)
+                                                    .toList(),
+                                                e.key,
+                                              ),
                                             ))
                                         .toList(),
                                   ),
@@ -294,28 +303,140 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
+void _showPhotoViewer(
+    BuildContext context, List<String> paths, int initialIndex) {
+  showDialog(
+    context: context,
+    barrierColor: Colors.black,
+    builder: (_) =>
+        _PhotoViewerDialog(paths: paths, initialIndex: initialIndex),
+  );
+}
+
 class _PhotoThumb extends StatelessWidget {
   final String path;
-  const _PhotoThumb({required this.path});
+  final VoidCallback? onTap;
+  const _PhotoThumb({required this.path, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image(
-          image: FileImage(File(path)),
-          width: 100,
-          height: 100,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image(
+            image: FileImage(File(path)),
             width: 100,
             height: 100,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.broken_image_outlined),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              width: 100,
+              height: 100,
+              color: Colors.grey.shade200,
+              child: const Icon(Icons.broken_image_outlined),
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PhotoViewerDialog extends StatefulWidget {
+  final List<String> paths;
+  final int initialIndex;
+
+  const _PhotoViewerDialog(
+      {required this.paths, required this.initialIndex});
+
+  @override
+  State<_PhotoViewerDialog> createState() => _PhotoViewerDialogState();
+}
+
+class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
+  late final PageController _pageCtrl;
+  late int _current;
+
+  @override
+  void initState() {
+    super.initState();
+    _current = widget.initialIndex;
+    _pageCtrl = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Colors.black,
+      child: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageCtrl,
+            itemCount: widget.paths.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (_, i) => InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4,
+              child: Center(
+                child: Image(
+                  image: FileImage(File(widget.paths[i])),
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.broken_image_outlined,
+                    color: Colors.white38,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black45,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          if (widget.paths.length > 1)
+            Positioned(
+              bottom: 28,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.paths.length,
+                  (i) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _current == i ? 16 : 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color:
+                          _current == i ? Colors.white : Colors.white38,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
