@@ -44,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +67,9 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('DROP TABLE lotes');
             await customStatement('ALTER TABLE lotes_new RENAME TO lotes');
             await customStatement('PRAGMA foreign_keys = ON');
+          }
+          if (from < 3) {
+            await m.addColumn(bovinos, bovinos.numRegistro);
           }
         },
       );

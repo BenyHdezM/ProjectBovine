@@ -10,7 +10,7 @@ import '../providers/bovinos_providers.dart';
 
 enum _EdadFiltroTipo { fijo, rango, mayorQue, menorQue }
 
-enum _SortCampo { arete, nombre, dueno, edad }
+enum _SortCampo { numRegistro, arete, nombre, dueno, edad }
 
 class BovinosListScreen extends ConsumerStatefulWidget {
   const BovinosListScreen({super.key});
@@ -82,6 +82,7 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         final ok = b.areteId.toLowerCase().contains(q) ||
+            (b.numRegistro?.contains(q) ?? false) ||
             (b.nombre?.toLowerCase().contains(q) ?? false) ||
             (item.dueno?.nombre.toLowerCase().contains(q) ?? false);
         if (!ok) return false;
@@ -112,6 +113,8 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
     if (_sortCampo != null) {
       lista.sort((a, b) {
         final cmp = switch (_sortCampo!) {
+          _SortCampo.numRegistro =>
+            (a.bovino.numRegistro ?? '').compareTo(b.bovino.numRegistro ?? ''),
           _SortCampo.arete =>
             a.bovino.areteId.compareTo(b.bovino.areteId),
           _SortCampo.nombre =>
@@ -382,6 +385,7 @@ class _Filtros extends StatelessWidget {
                         label: sortCampo == null
                             ? 'Ordenar'
                             : '${switch (sortCampo!) {
+                                _SortCampo.numRegistro => 'Núm. Reg.',
                                 _SortCampo.arete => 'Arete',
                                 _SortCampo.nombre => 'Nombre',
                                 _SortCampo.dueno => 'Dueño',
@@ -542,18 +546,20 @@ class _AdaptiveList extends StatelessWidget {
 // ─── Utilidades ──────────────────────────────────────────────────────────────
 
 int? _sortCampoToColIndex(_SortCampo? campo) => switch (campo) {
-  _SortCampo.arete => 0,
-  _SortCampo.nombre => 1,
-  _SortCampo.dueno => 2,
-  _SortCampo.edad => 4,
+  _SortCampo.numRegistro => 0,
+  _SortCampo.arete => 1,
+  _SortCampo.nombre => 2,
+  _SortCampo.dueno => 3,
+  _SortCampo.edad => 5,
   null => null,
 };
 
 _SortCampo? _colIndexToSortCampo(int index) => switch (index) {
-  0 => _SortCampo.arete,
-  1 => _SortCampo.nombre,
-  2 => _SortCampo.dueno,
-  4 => _SortCampo.edad,
+  0 => _SortCampo.numRegistro,
+  1 => _SortCampo.arete,
+  2 => _SortCampo.nombre,
+  3 => _SortCampo.dueno,
+  5 => _SortCampo.edad,
   _ => null,
 };
 
@@ -585,6 +591,7 @@ void _mostrarOrdenarPor(
               ),
               items: const [
                 DropdownMenuItem(value: null, child: Text('Sin orden')),
+                DropdownMenuItem(value: _SortCampo.numRegistro, child: Text('Núm. Registro')),
                 DropdownMenuItem(value: _SortCampo.arete, child: Text('Arete')),
                 DropdownMenuItem(value: _SortCampo.nombre, child: Text('Nombre')),
                 DropdownMenuItem(value: _SortCampo.dueno, child: Text('Dueño')),
@@ -943,6 +950,7 @@ class _BovinosDataTable extends StatelessWidget {
             Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
           columns: [
+            DataColumn(label: const Text('Núm. Reg.'), onSort: onSort),
             DataColumn(label: const Text('Arete'), onSort: onSort),
             DataColumn(label: const Text('Nombre'), onSort: onSort),
             DataColumn(label: const Text('Dueño'), onSort: onSort),
@@ -977,6 +985,7 @@ class _BovinosDataTable extends StatelessWidget {
               .map(
                 (item) => DataRow(
                   cells: [
+                    DataCell(Text(item.bovino.numRegistro ?? '—')),
                     DataCell(Text(item.bovino.areteId)),
                     DataCell(Text(item.bovino.nombre ?? '—')),
                     DataCell(Text(item.dueno?.nombre ?? '—')),
@@ -1058,6 +1067,7 @@ class _BovinosListView extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600)),
           subtitle: Text(
             [
+              if (item.bovino.numRegistro != null) 'Reg. ${item.bovino.numRegistro!}',
               if (item.bovino.nombre != null) item.bovino.nombre!,
               if (item.dueno != null) item.dueno!.nombre,
               if (_calcularEdad(item.bovino.fechaNacimiento) != null)

@@ -90,6 +90,12 @@ class BovinoDetailScreen extends ConsumerWidget {
                       label: 'Arete ID',
                       value: b.areteId,
                     ),
+                    if (b.numRegistro != null)
+                      _InfoRow(
+                        icon: Icons.numbers_outlined,
+                        label: 'Núm. Registro',
+                        value: b.numRegistro!,
+                      ),
                     if (b.nombre != null)
                       _InfoRow(
                         icon: Icons.pets,

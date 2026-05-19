@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,6 +26,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   final _picker = ImagePicker();
 
   late final TextEditingController _areteCtrl;
+  late final TextEditingController _numRegistroCtrl;
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _uppCtrl;
 
@@ -47,6 +49,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     super.initState();
     final b = widget.bovino;
     _areteCtrl = TextEditingController(text: b?.areteId ?? '');
+    _numRegistroCtrl = TextEditingController(text: b?.numRegistro ?? '');
     _nombreCtrl = TextEditingController(text: b?.nombre ?? '');
     _uppCtrl = TextEditingController(text: b?.upp ?? '');
     if (b != null) {
@@ -62,6 +65,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   @override
   void dispose() {
     _areteCtrl.dispose();
+    _numRegistroCtrl.dispose();
     _nombreCtrl.dispose();
     _uppCtrl.dispose();
     super.dispose();
@@ -184,6 +188,9 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
 
     final companion = BovinosCompanion(
       areteId: Value(_areteCtrl.text.trim()),
+      numRegistro: Value(_numRegistroCtrl.text.trim().isEmpty
+          ? null
+          : _numRegistroCtrl.text.trim()),
       nombre: Value(_nombreCtrl.text.trim().isEmpty
           ? null
           : _nombreCtrl.text.trim()),
@@ -329,6 +336,19 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                   inputFormatters: [NoAccentFormatter()],
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                ),
+                const SizedBox(height: 16),
+
+                // ── Núm. Registro ────────────────────────────────────────────
+                TextFormField(
+                  controller: _numRegistroCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Núm. Registro',
+                    prefixIcon: Icon(Icons.numbers_outlined),
+                    helperText: 'Opcional — solo números positivos',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
                 const SizedBox(height: 16),
 
