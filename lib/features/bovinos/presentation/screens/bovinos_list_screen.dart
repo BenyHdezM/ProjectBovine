@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +8,7 @@ import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../../../../core/database/seeds/seed_test_data.dart';
 import '../providers/bovinos_providers.dart';
 
-enum _EdadFiltroTipo { rango, mayorQue, menorQue }
+enum _EdadFiltroTipo { fijo, rango, mayorQue, menorQue }
 
 enum _SortCampo { arete, nombre, dueno, edad }
 
@@ -93,6 +94,8 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
         final edad = _calcularEdad(b.fechaNacimiento);
         if (edad == null) return false;
         switch (_edadFiltroTipo!) {
+          case _EdadFiltroTipo.fijo:
+            if (edad != _edadValor.round()) return false;
           case _EdadFiltroTipo.rango:
             if (edad < _edadRango.start.round() ||
                 edad > _edadRango.end.round()) return false;
@@ -354,6 +357,8 @@ class _Filtros extends StatelessWidget {
                         label: edadFiltroTipo == null
                             ? 'Edad'
                             : switch (edadFiltroTipo!) {
+                                _EdadFiltroTipo.fijo =>
+                                  '= ${edadValor.round()} a',
                                 _EdadFiltroTipo.rango =>
                                   '${edadRango.start.round()}–${edadRango.end.round()} a',
                                 _EdadFiltroTipo.mayorQue =>
@@ -723,86 +728,126 @@ void _mostrarFiltroEdad(
   required ValueChanged<RangeValues> onRango,
   required ValueChanged<double> onValor,
 }) {
-  _EdadFiltroTipo? localTipo = tipo;
-  RangeValues localRango = rango;
-  double localValor = valor;
+  const tipos = [
+    _EdadFiltroTipo.rango,
+    _EdadFiltroTipo.fijo,
+    _EdadFiltroTipo.mayorQue,
+    _EdadFiltroTipo.menorQue,
+  ];
+  const tipoLabels = ['Rango', 'Igual a', 'Mayor que', 'Menor que'];
 
-  showDialog(
+  _EdadFiltroTipo localTipo = tipo ?? _EdadFiltroTipo.fijo;
+  int localValor = valor.round().clamp(0, 20);
+  int localMin = rango.start.round().clamp(0, 20);
+  int localMax = rango.end.round().clamp(0, 20);
+
+  final tipoCtrl = FixedExtentScrollController(
+    initialItem: tipos.indexOf(localTipo),
+  );
+  final valorCtrl = FixedExtentScrollController(initialItem: localValor);
+  final minCtrl = FixedExtentScrollController(initialItem: localMin);
+  final maxCtrl = FixedExtentScrollController(initialItem: localMax);
+
+  const itemExtent = 40.0;
+  const pickerHeight = 160.0;
+
+  Widget numPicker(FixedExtentScrollController ctrl, ValueChanged<int> onChanged) =>
+      SizedBox(
+        height: pickerHeight,
+        child: CupertinoPicker(
+          scrollController: ctrl,
+          itemExtent: itemExtent,
+          onSelectedItemChanged: onChanged,
+          children: List.generate(
+            21,
+            (i) => Center(child: Text('$i', style: const TextStyle(fontSize: 18))),
+          ),
+        ),
+      );
+
+  showDialog<void>(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setLocal) => AlertDialog(
         title: const Text('Filtrar por Edad', textAlign: TextAlign.center),
         actionsAlignment: MainAxisAlignment.center,
-        content: SizedBox(
-          width: 320,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                alignment: WrapAlignment.center,
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Tipo ─────────────────────────────────────────────────
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ChoiceChip(
-                    label: const Text('Rango'),
-                    selected: localTipo == _EdadFiltroTipo.rango,
-                    onSelected: (_) =>
-                        setLocal(() => localTipo = _EdadFiltroTipo.rango),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Mayor que'),
-                    selected: localTipo == _EdadFiltroTipo.mayorQue,
-                    onSelected: (_) =>
-                        setLocal(() => localTipo = _EdadFiltroTipo.mayorQue),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Menor que'),
-                    selected: localTipo == _EdadFiltroTipo.menorQue,
-                    onSelected: (_) =>
-                        setLocal(() => localTipo = _EdadFiltroTipo.menorQue),
+                  Text('Tipo',
+                      style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(ctx).colorScheme.outline,
+                          )),
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    height: pickerHeight,
+                    child: CupertinoPicker(
+                      scrollController: tipoCtrl,
+                      itemExtent: itemExtent,
+                      onSelectedItemChanged: (i) =>
+                          setLocal(() => localTipo = tipos[i]),
+                      children: tipoLabels
+                          .map((l) => Center(
+                                child: Text(l,
+                                    style: const TextStyle(fontSize: 14)),
+                              ))
+                          .toList(),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              if (localTipo == _EdadFiltroTipo.rango) ...[
-                Text('${localRango.start.round()} – ${localRango.end.round()} años'),
-                RangeSlider(
-                  values: localRango,
-                  min: 0,
-                  max: 25,
-                  divisions: 25,
-                  labels: RangeLabels(
-                    localRango.start.round().toString(),
-                    localRango.end.round().toString(),
-                  ),
-                  onChanged: (v) => setLocal(() => localRango = v),
+            ),
+            const SizedBox(width: 8),
+            // ── Valor(es) ─────────────────────────────────────────────
+            if (localTipo == _EdadFiltroTipo.rango) ...[
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Mín',
+                        style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(ctx).colorScheme.outline,
+                            )),
+                    const SizedBox(height: 4),
+                    numPicker(minCtrl, (i) => setLocal(() => localMin = i)),
+                  ],
                 ),
-              ],
-              if (localTipo == _EdadFiltroTipo.mayorQue) ...[
-                Text('Mayor que ${localValor.round()} años'),
-                Slider(
-                  value: localValor,
-                  min: 0,
-                  max: 25,
-                  divisions: 25,
-                  label: '${localValor.round()}',
-                  onChanged: (v) => setLocal(() => localValor = v),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Máx',
+                        style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(ctx).colorScheme.outline,
+                            )),
+                    const SizedBox(height: 4),
+                    numPicker(maxCtrl, (i) => setLocal(() => localMax = i)),
+                  ],
                 ),
-              ],
-              if (localTipo == _EdadFiltroTipo.menorQue) ...[
-                Text('Menor que ${localValor.round()} años'),
-                Slider(
-                  value: localValor,
-                  min: 0,
-                  max: 25,
-                  divisions: 25,
-                  label: '${localValor.round()}',
-                  onChanged: (v) => setLocal(() => localValor = v),
+              ),
+            ] else ...[
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Años',
+                        style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                              color: Theme.of(ctx).colorScheme.outline,
+                            )),
+                    const SizedBox(height: 4),
+                    numPicker(valorCtrl, (i) => setLocal(() => localValor = i)),
+                  ],
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
         actions: [
           TextButton(
@@ -815,8 +860,11 @@ void _mostrarFiltroEdad(
           FilledButton(
             onPressed: () {
               onTipo(localTipo);
-              onRango(localRango);
-              onValor(localValor);
+              if (localTipo == _EdadFiltroTipo.rango) {
+                onRango(RangeValues(localMin.toDouble(), localMax.toDouble()));
+              } else {
+                onValor(localValor.toDouble());
+              }
               Navigator.pop(ctx);
             },
             child: const Text('Aplicar'),
@@ -824,7 +872,12 @@ void _mostrarFiltroEdad(
         ],
       ),
     ),
-  );
+  ).then((_) {
+    tipoCtrl.dispose();
+    valorCtrl.dispose();
+    minCtrl.dispose();
+    maxCtrl.dispose();
+  });
 }
 
 int? _calcularEdad(DateTime? fechaNacimiento) {
