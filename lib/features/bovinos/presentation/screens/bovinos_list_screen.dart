@@ -566,10 +566,11 @@ void _mostrarOrdenarPor(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setLocal) => AlertDialog(
-        title: const Text('Ordenar por'),
+        title: const Text('Ordenar por', textAlign: TextAlign.center),
+        actionsAlignment: MainAxisAlignment.center,
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             DropdownButtonFormField<_SortCampo?>(
               value: localCampo,
@@ -636,12 +637,14 @@ void _mostrarFiltroEstado(
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Filtrar por Estado'),
+      title: const Text('Filtrar por Estado', textAlign: TextAlign.center),
+      actionsAlignment: MainAxisAlignment.center,
       content: SizedBox(
         width: 320,
         child: Wrap(
           spacing: 8,
           runSpacing: 4,
+          alignment: WrapAlignment.center,
           children: [
             ChoiceChip(
               label: const Text('Activo'),
@@ -679,12 +682,14 @@ void _mostrarFiltroSexo(
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Filtrar por Sexo'),
+      title: const Text('Filtrar por Sexo', textAlign: TextAlign.center),
+      actionsAlignment: MainAxisAlignment.center,
       content: SizedBox(
         width: 320,
         child: Wrap(
           spacing: 8,
           runSpacing: 4,
+          alignment: WrapAlignment.center,
           children: [
             ChoiceChip(
               label: const Text('Hembra'),
@@ -726,16 +731,18 @@ void _mostrarFiltroEdad(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setLocal) => AlertDialog(
-        title: const Text('Filtrar por Edad'),
+        title: const Text('Filtrar por Edad', textAlign: TextAlign.center),
+        actionsAlignment: MainAxisAlignment.center,
         content: SizedBox(
           width: 320,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
+                alignment: WrapAlignment.center,
                 children: [
                   ChoiceChip(
                     label: const Text('Rango'),
