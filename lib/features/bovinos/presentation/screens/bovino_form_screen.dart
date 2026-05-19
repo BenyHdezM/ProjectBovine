@@ -42,6 +42,8 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   final List<File> _newPhotoFiles = [];
   final Set<int> _deletedPhotoIds = {};
 
+  bool _showErrors = false;
+
   bool get _esEdicion => widget.bovino != null;
 
   @override
@@ -184,7 +186,10 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() => _showErrors = true);
     if (!_formKey.currentState!.validate()) return;
+    if (_estado == 'muerto' && _fechaMuerte == null) return;
+    if (_estado == 'vendido' && _fechaVenta == null) return;
 
     final companion = BovinosCompanion(
       areteId: Value(_areteCtrl.text.trim()),
@@ -514,19 +519,36 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                       ButtonSegment(value: 'muerto', label: Text('Muerto')),
                     ],
                     selected: {_estado},
-                    onSelectionChanged: (v) =>
-                        setState(() => _estado = v.first),
+                    onSelectionChanged: (v) => setState(() {
+                      _estado = v.first;
+                      if (_estado == 'activo') {
+                        _fechaMuerte = null;
+                        _fechaVenta = null;
+                        _showErrors = false;
+                      }
+                    }),
                   ),
                   if (_estado == 'muerto') ...[
                     const SizedBox(height: 12),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event_busy_outlined),
-                      title: const Text('Fecha de muerte'),
+                      leading: Icon(
+                        Icons.event_busy_outlined,
+                        color: (_showErrors && _fechaMuerte == null)
+                            ? Theme.of(context).colorScheme.error
+                            : null,
+                      ),
+                      title: const Text('Fecha de muerte *'),
                       subtitle: Text(
                         _fechaMuerte != null
                             ? _dateFormat.format(_fechaMuerte!)
-                            : 'No especificada',
+                            : (_showErrors
+                                ? 'Requerida'
+                                : 'No especificada'),
+                        style: (_showErrors && _fechaMuerte == null)
+                            ? TextStyle(
+                                color: Theme.of(context).colorScheme.error)
+                            : null,
                       ),
                       onTap: () => _pickDate(context, field: _DateField.muerte),
                     ),
@@ -535,12 +557,23 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                     const SizedBox(height: 12),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.sell_outlined),
-                      title: const Text('Fecha de venta'),
+                      leading: Icon(
+                        Icons.sell_outlined,
+                        color: (_showErrors && _fechaVenta == null)
+                            ? Theme.of(context).colorScheme.error
+                            : null,
+                      ),
+                      title: const Text('Fecha de venta *'),
                       subtitle: Text(
                         _fechaVenta != null
                             ? _dateFormat.format(_fechaVenta!)
-                            : 'No especificada',
+                            : (_showErrors
+                                ? 'Requerida'
+                                : 'No especificada'),
+                        style: (_showErrors && _fechaVenta == null)
+                            ? TextStyle(
+                                color: Theme.of(context).colorScheme.error)
+                            : null,
                       ),
                       onTap: () => _pickDate(context, field: _DateField.venta),
                     ),

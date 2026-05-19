@@ -84,7 +84,7 @@ class BovinoDetailScreen extends ConsumerWidget {
                     ),
 
                     // ── Identificación ───────────────────────────────────
-                    _SectionLabel('Identificación'),
+                    const _SectionLabel('Identificación'),
                     _InfoRow(
                       icon: Icons.tag,
                       label: 'Arete ID',
@@ -112,7 +112,7 @@ class BovinoDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // ── Estado ───────────────────────────────────────────
-                    _SectionLabel('Estado'),
+                    const _SectionLabel('Estado'),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
@@ -147,7 +147,7 @@ class BovinoDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // ── Nacimiento ───────────────────────────────────────
-                    _SectionLabel('Nacimiento'),
+                    const _SectionLabel('Nacimiento'),
                     _InfoRow(
                       icon: Icons.cake_outlined,
                       label: 'Fecha de nacimiento',
@@ -158,7 +158,7 @@ class BovinoDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // ── Clasificación ────────────────────────────────────
-                    _SectionLabel('Clasificación'),
+                    const _SectionLabel('Clasificación'),
                     _InfoRow(
                       icon: Icons.category_outlined,
                       label: 'Lote',
@@ -180,7 +180,7 @@ class BovinoDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // ── Propiedad ────────────────────────────────────────
-                    _SectionLabel('Dueño actual'),
+                    const _SectionLabel('Dueño actual'),
                     _InfoRow(
                       icon: Icons.person_outline,
                       label: 'Dueño',
@@ -189,7 +189,7 @@ class BovinoDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     // ── Registro ─────────────────────────────────────────
-                    _SectionLabel('Registro'),
+                    const _SectionLabel('Registro'),
                     _InfoRow(
                       icon: Icons.calendar_today_outlined,
                       label: 'Registrado',

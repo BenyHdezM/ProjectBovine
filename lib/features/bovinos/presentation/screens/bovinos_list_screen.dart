@@ -99,7 +99,7 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
             if (edad != _edadValor.round()) return false;
           case _EdadFiltroTipo.rango:
             if (edad < _edadRango.start.round() ||
-                edad > _edadRango.end.round()) return false;
+                edad > _edadRango.end.round()) { return false; }
           case _EdadFiltroTipo.mayorQue:
             if (edad <= _edadValor.round()) return false;
           case _EdadFiltroTipo.menorQue:
@@ -589,7 +589,7 @@ void _mostrarOrdenarPor(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             DropdownButtonFormField<_SortCampo?>(
-              value: localCampo,
+              initialValue: localCampo,
               decoration: const InputDecoration(
                 labelText: 'Campo',
                 prefixIcon: Icon(Icons.sort),
