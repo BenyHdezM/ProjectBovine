@@ -214,4 +214,38 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
       onConflict: DoUpdate((_) => companion, target: [db.progenie.bovinoId]),
     );
   }
+
+  // ── Registro Reproductivo ─────────────────────────────────────────────────
+
+  Stream<List<RegistroReproductivoData>> watchRegistrosByBovinoId(
+          int bovinoId) =>
+      (select(db.registroReproductivo)
+            ..where((r) => r.bovinoId.equals(bovinoId))
+            ..orderBy([(r) => OrderingTerm.desc(r.fecha)]))
+          .watch();
+
+  Future<int> insertRegistro(RegistroReproductivoCompanion registro) =>
+      into(db.registroReproductivo).insert(registro);
+
+  Future<bool> updateRegistro(RegistroReproductivoCompanion registro) =>
+      update(db.registroReproductivo).replace(registro);
+
+  Future<int> deleteRegistro(int id) =>
+      (delete(db.registroReproductivo)..where((r) => r.id.equals(id))).go();
+
+  // ── Toros ─────────────────────────────────────────────────────────────────
+
+  Stream<List<Toro>> watchAllTorosStream() => select(db.toros).watch();
+
+  Stream<Toro?> watchToroByBovinoId(int bovinoId) =>
+      (select(db.toros)..where((t) => t.bovinoId.equals(bovinoId)))
+          .watchSingleOrNull();
+
+  Future<int> insertToro(int bovinoId) => into(db.toros).insert(
+        TorosCompanion(bovinoId: Value(bovinoId)),
+        onConflict: DoNothing(),
+      );
+
+  Future<int> deleteToro(int bovinoId) =>
+      (delete(db.toros)..where((t) => t.bovinoId.equals(bovinoId))).go();
 }

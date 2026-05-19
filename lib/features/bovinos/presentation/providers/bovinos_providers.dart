@@ -250,3 +250,104 @@ class PartoFormNotifier extends AsyncNotifier<void> {
 
 final partoFormProvider =
     AsyncNotifierProvider<PartoFormNotifier, void>(PartoFormNotifier.new);
+
+// ─── Registro reproductivo ───────────────────────────────────────────────────
+
+final registrosByBovinoProvider =
+    StreamProvider.family<List<RegistroReproductivoData>, int>(
+        (ref, bovinoId) {
+  return ref
+      .watch(appDatabaseProvider)
+      .bovinosDao
+      .watchRegistrosByBovinoId(bovinoId);
+});
+
+final allTorosProvider = StreamProvider<List<Toro>>((ref) {
+  return ref.watch(appDatabaseProvider).bovinosDao.watchAllTorosStream();
+});
+
+final toroByBovinoProvider = StreamProvider.family<Toro?, int>((ref, bovinoId) {
+  return ref
+      .watch(appDatabaseProvider)
+      .bovinosDao
+      .watchToroByBovinoId(bovinoId);
+});
+
+class RegistroFormNotifier extends AsyncNotifier<void> {
+  @override
+  FutureOr<void> build() {}
+
+  Future<String?> saveRegistro({
+    required int bovinoId,
+    required String tipo,
+    required DateTime fecha,
+    DateTime? fechaProbableParto,
+    int? toroId,
+    String? diagnostico,
+    int? editId,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final dao = ref.read(appDatabaseProvider).bovinosDao;
+      final companion = RegistroReproductivoCompanion(
+        id: editId != null ? Value(editId) : const Value.absent(),
+        bovinoId: Value(bovinoId),
+        tipo: Value(tipo),
+        fecha: Value(fecha),
+        fechaProbableParto: Value(fechaProbableParto),
+        toroId: Value(toroId),
+        diagnostico: Value(diagnostico),
+      );
+      if (editId == null) {
+        await dao.insertRegistro(companion);
+      } else {
+        await dao.updateRegistro(companion);
+      }
+      state = const AsyncData(null);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return e.toString();
+    }
+  }
+
+  Future<String?> deleteRegistro(int id) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(appDatabaseProvider).bovinosDao.deleteRegistro(id);
+      state = const AsyncData(null);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return e.toString();
+    }
+  }
+}
+
+final registroFormProvider =
+    AsyncNotifierProvider<RegistroFormNotifier, void>(RegistroFormNotifier.new);
+
+class ToroNotifier extends AsyncNotifier<void> {
+  @override
+  FutureOr<void> build() {}
+
+  Future<String?> toggleToro(int bovinoId, {required bool enable}) async {
+    state = const AsyncLoading();
+    try {
+      final dao = ref.read(appDatabaseProvider).bovinosDao;
+      if (enable) {
+        await dao.insertToro(bovinoId);
+      } else {
+        await dao.deleteToro(bovinoId);
+      }
+      state = const AsyncData(null);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return e.toString();
+    }
+  }
+}
+
+final toroNotifierProvider =
+    AsyncNotifierProvider<ToroNotifier, void>(ToroNotifier.new);
