@@ -7,6 +7,10 @@ import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../../../../core/database/seeds/seed_test_data.dart';
 import '../providers/bovinos_providers.dart';
 
+enum _EdadFiltroTipo { rango, mayorQue, menorQue }
+
+enum _SortCampo { arete, nombre, dueno, edad }
+
 class BovinosListScreen extends ConsumerStatefulWidget {
   const BovinosListScreen({super.key});
 
@@ -17,8 +21,13 @@ class BovinosListScreen extends ConsumerStatefulWidget {
 class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
   final _searchCtrl = TextEditingController();
   String _searchQuery = '';
-  String? _estadoFilter; // null = todos
-  String? _sexoFilter;   // null = todos
+  String? _estadoFilter;
+  String? _sexoFilter;
+  _EdadFiltroTipo? _edadFiltroTipo;
+  RangeValues _edadRango = const RangeValues(0, 20);
+  double _edadValor = 5;
+  _SortCampo? _sortCampo;
+  bool _sortAscending = true;
 
   @override
   void dispose() {
@@ -66,7 +75,7 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
   }
 
   List<BovinoWithDueno> _filtrar(List<BovinoWithDueno> todos) {
-    return todos.where((item) {
+    var lista = todos.where((item) {
       final b = item.bovino;
 
       if (_searchQuery.isNotEmpty) {
@@ -80,8 +89,40 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
       if (_estadoFilter != null && b.estado != _estadoFilter) return false;
       if (_sexoFilter != null && b.sexo != _sexoFilter) return false;
 
+      if (_edadFiltroTipo != null) {
+        final edad = _calcularEdad(b.fechaNacimiento);
+        if (edad == null) return false;
+        switch (_edadFiltroTipo!) {
+          case _EdadFiltroTipo.rango:
+            if (edad < _edadRango.start.round() ||
+                edad > _edadRango.end.round()) return false;
+          case _EdadFiltroTipo.mayorQue:
+            if (edad <= _edadValor.round()) return false;
+          case _EdadFiltroTipo.menorQue:
+            if (edad >= _edadValor.round()) return false;
+        }
+      }
+
       return true;
     }).toList();
+
+    if (_sortCampo != null) {
+      lista.sort((a, b) {
+        final cmp = switch (_sortCampo!) {
+          _SortCampo.arete =>
+            a.bovino.areteId.compareTo(b.bovino.areteId),
+          _SortCampo.nombre =>
+            (a.bovino.nombre ?? '').compareTo(b.bovino.nombre ?? ''),
+          _SortCampo.dueno =>
+            (a.dueno?.nombre ?? '').compareTo(b.dueno?.nombre ?? ''),
+          _SortCampo.edad => (_calcularEdad(a.bovino.fechaNacimiento) ?? -1)
+              .compareTo(_calcularEdad(b.bovino.fechaNacimiento) ?? -1),
+        };
+        return _sortAscending ? cmp : -cmp;
+      });
+    }
+
+    return lista;
   }
 
   @override
@@ -136,19 +177,43 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
                 searchCtrl: _searchCtrl,
                 estadoFilter: _estadoFilter,
                 sexoFilter: _sexoFilter,
+                edadFiltroTipo: _edadFiltroTipo,
+                edadRango: _edadRango,
+                edadValor: _edadValor,
+                sortCampo: _sortCampo,
+                sortAscending: _sortAscending,
                 total: todos.length,
                 filtrados: bovinos.length,
                 onSearch: (v) => setState(() => _searchQuery = v.trim()),
                 onEstado: (v) => setState(() => _estadoFilter = v),
                 onSexo: (v) => setState(() => _sexoFilter = v),
+                onEdadFiltroTipo: (v) => setState(() => _edadFiltroTipo = v),
+                onEdadRango: (v) => setState(() => _edadRango = v),
+                onEdadValor: (v) => setState(() => _edadValor = v),
+                onSortCampo: (v) => setState(() => _sortCampo = v),
+                onSortAscending: (v) => setState(() => _sortAscending = v),
               ),
               Expanded(
                 child: bovinos.isEmpty
                     ? _EmptyState(hayFiltros: _searchQuery.isNotEmpty ||
-                        _estadoFilter != null || _sexoFilter != null)
+                        _estadoFilter != null || _sexoFilter != null ||
+                        _edadFiltroTipo != null || _sortCampo != null)
                     : _AdaptiveList(
                         bovinos: bovinos,
                         onDelete: _deleteBovino,
+                        sortCampo: _sortCampo,
+                        sortAscending: _sortAscending,
+                        onSort: (col, asc) => setState(() {
+                          _sortCampo = _colIndexToSortCampo(col);
+                          _sortAscending = asc;
+                        }),
+                        edadFiltroTipo: _edadFiltroTipo,
+                        edadRango: _edadRango,
+                        edadValor: _edadValor,
+                        onEdadFiltroTipo: (v) =>
+                            setState(() => _edadFiltroTipo = v),
+                        onEdadRango: (v) => setState(() => _edadRango = v),
+                        onEdadValor: (v) => setState(() => _edadValor = v),
                       ),
               ),
             ],
@@ -170,27 +235,47 @@ class _Filtros extends StatelessWidget {
   final TextEditingController searchCtrl;
   final String? estadoFilter;
   final String? sexoFilter;
+  final _EdadFiltroTipo? edadFiltroTipo;
+  final RangeValues edadRango;
+  final double edadValor;
+  final _SortCampo? sortCampo;
+  final bool sortAscending;
   final int total;
   final int filtrados;
   final ValueChanged<String> onSearch;
   final ValueChanged<String?> onEstado;
   final ValueChanged<String?> onSexo;
+  final ValueChanged<_EdadFiltroTipo?> onEdadFiltroTipo;
+  final ValueChanged<RangeValues> onEdadRango;
+  final ValueChanged<double> onEdadValor;
+  final ValueChanged<_SortCampo?> onSortCampo;
+  final ValueChanged<bool> onSortAscending;
 
   const _Filtros({
     required this.searchCtrl,
     required this.estadoFilter,
     required this.sexoFilter,
+    required this.edadFiltroTipo,
+    required this.edadRango,
+    required this.edadValor,
+    required this.sortCampo,
+    required this.sortAscending,
     required this.total,
     required this.filtrados,
     required this.onSearch,
     required this.onEstado,
     required this.onSexo,
+    required this.onEdadFiltroTipo,
+    required this.onEdadRango,
+    required this.onEdadValor,
+    required this.onSortCampo,
+    required this.onSortAscending,
   });
 
   @override
   Widget build(BuildContext context) {
     final hayFiltro = estadoFilter != null || sexoFilter != null ||
-        searchCtrl.text.isNotEmpty;
+        searchCtrl.text.isNotEmpty || edadFiltroTipo != null;
 
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -221,7 +306,7 @@ class _Filtros extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // ── Chips de estado ────────────────────────────────────────────────
+          // ── Chips de estado y sexo ─────────────────────────────────────────
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -267,6 +352,54 @@ class _Filtros extends StatelessWidget {
                   color: Colors.blue,
                   onTap: () => onSexo(sexoFilter == 'M' ? null : 'M'),
                 ),
+                const SizedBox(width: 12),
+                const VerticalDivider(width: 1, indent: 4, endIndent: 4),
+                const SizedBox(width: 12),
+                _FiltroChip(
+                  label: edadFiltroTipo == null
+                      ? 'Edad'
+                      : switch (edadFiltroTipo!) {
+                          _EdadFiltroTipo.rango =>
+                            '${edadRango.start.round()}–${edadRango.end.round()} a',
+                          _EdadFiltroTipo.mayorQue =>
+                            '> ${edadValor.round()} a',
+                          _EdadFiltroTipo.menorQue =>
+                            '< ${edadValor.round()} a',
+                        },
+                  selected: edadFiltroTipo != null,
+                  color: Colors.teal,
+                  onTap: () => _mostrarFiltroEdad(
+                    context,
+                    tipo: edadFiltroTipo,
+                    rango: edadRango,
+                    valor: edadValor,
+                    onTipo: onEdadFiltroTipo,
+                    onRango: onEdadRango,
+                    onValor: onEdadValor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const VerticalDivider(width: 1, indent: 4, endIndent: 4),
+                const SizedBox(width: 12),
+                _FiltroChip(
+                  label: sortCampo == null
+                      ? 'Ordenar'
+                      : '${switch (sortCampo!) {
+                          _SortCampo.arete => 'Arete',
+                          _SortCampo.nombre => 'Nombre',
+                          _SortCampo.dueno => 'Dueño',
+                          _SortCampo.edad => 'Edad',
+                        }} ${sortAscending ? '↑' : '↓'}',
+                  selected: sortCampo != null,
+                  color: Colors.indigo,
+                  onTap: () => _mostrarOrdenarPor(
+                    context,
+                    campo: sortCampo,
+                    ascending: sortAscending,
+                    onCampo: onSortCampo,
+                    onAscending: onSortAscending,
+                  ),
+                ),
               ],
             ),
           ),
@@ -274,9 +407,7 @@ class _Filtros extends StatelessWidget {
 
           // ── Contador ───────────────────────────────────────────────────────
           Text(
-            hayFiltro
-                ? '$filtrados de $total bovinos'
-                : '$total bovinos',
+            hayFiltro ? '$filtrados de $total bovinos' : '$total bovinos',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: Theme.of(context).colorScheme.outline,
                 ),
@@ -359,14 +490,48 @@ class _EmptyState extends StatelessWidget {
 class _AdaptiveList extends StatelessWidget {
   final List<BovinoWithDueno> bovinos;
   final void Function(BovinoWithDueno) onDelete;
-  const _AdaptiveList({required this.bovinos, required this.onDelete});
+  final _SortCampo? sortCampo;
+  final bool sortAscending;
+  final DataColumnSortCallback onSort;
+  final _EdadFiltroTipo? edadFiltroTipo;
+  final RangeValues edadRango;
+  final double edadValor;
+  final ValueChanged<_EdadFiltroTipo?> onEdadFiltroTipo;
+  final ValueChanged<RangeValues> onEdadRango;
+  final ValueChanged<double> onEdadValor;
+
+  const _AdaptiveList({
+    required this.bovinos,
+    required this.onDelete,
+    required this.sortCampo,
+    required this.sortAscending,
+    required this.onSort,
+    required this.edadFiltroTipo,
+    required this.edadRango,
+    required this.edadValor,
+    required this.onEdadFiltroTipo,
+    required this.onEdadRango,
+    required this.onEdadValor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 640) {
-          return _BovinosDataTable(bovinos: bovinos, onDelete: onDelete);
+          return _BovinosDataTable(
+            bovinos: bovinos,
+            onDelete: onDelete,
+            sortCampo: sortCampo,
+            sortAscending: sortAscending,
+            onSort: onSort,
+            edadFiltroTipo: edadFiltroTipo,
+            edadRango: edadRango,
+            edadValor: edadValor,
+            onEdadFiltroTipo: onEdadFiltroTipo,
+            onEdadRango: onEdadRango,
+            onEdadValor: onEdadValor,
+          );
         }
         return _BovinosListView(bovinos: bovinos, onDelete: onDelete);
       },
@@ -374,7 +539,215 @@ class _AdaptiveList extends StatelessWidget {
   }
 }
 
-// ─── Utilidad ────────────────────────────────────────────────────────────────
+// ─── Utilidades ──────────────────────────────────────────────────────────────
+
+int? _sortCampoToColIndex(_SortCampo? campo) => switch (campo) {
+  _SortCampo.arete => 0,
+  _SortCampo.nombre => 1,
+  _SortCampo.dueno => 2,
+  _SortCampo.edad => 4,
+  null => null,
+};
+
+_SortCampo? _colIndexToSortCampo(int index) => switch (index) {
+  0 => _SortCampo.arete,
+  1 => _SortCampo.nombre,
+  2 => _SortCampo.dueno,
+  4 => _SortCampo.edad,
+  _ => null,
+};
+
+void _mostrarOrdenarPor(
+  BuildContext context, {
+  required _SortCampo? campo,
+  required bool ascending,
+  required ValueChanged<_SortCampo?> onCampo,
+  required ValueChanged<bool> onAscending,
+}) {
+  _SortCampo? localCampo = campo;
+  bool localAscending = ascending;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setLocal) => AlertDialog(
+        title: const Text('Ordenar por'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DropdownButtonFormField<_SortCampo?>(
+              value: localCampo,
+              decoration: const InputDecoration(
+                labelText: 'Campo',
+                prefixIcon: Icon(Icons.sort),
+              ),
+              items: const [
+                DropdownMenuItem(value: null, child: Text('Sin orden')),
+                DropdownMenuItem(value: _SortCampo.arete, child: Text('Arete')),
+                DropdownMenuItem(value: _SortCampo.nombre, child: Text('Nombre')),
+                DropdownMenuItem(value: _SortCampo.dueno, child: Text('Dueño')),
+                DropdownMenuItem(value: _SortCampo.edad, child: Text('Edad')),
+              ],
+              onChanged: (v) => setLocal(() => localCampo = v),
+            ),
+            const SizedBox(height: 20),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(
+                  value: true,
+                  label: Text('Ascendente'),
+                  icon: Icon(Icons.arrow_upward, size: 16),
+                ),
+                ButtonSegment(
+                  value: false,
+                  label: Text('Descendente'),
+                  icon: Icon(Icons.arrow_downward, size: 16),
+                ),
+              ],
+              selected: {localAscending},
+              onSelectionChanged: (v) =>
+                  setLocal(() => localAscending = v.first),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              onCampo(null);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Limpiar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              onCampo(localCampo);
+              onAscending(localAscending);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+void _mostrarFiltroEdad(
+  BuildContext context, {
+  required _EdadFiltroTipo? tipo,
+  required RangeValues rango,
+  required double valor,
+  required ValueChanged<_EdadFiltroTipo?> onTipo,
+  required ValueChanged<RangeValues> onRango,
+  required ValueChanged<double> onValor,
+}) {
+  _EdadFiltroTipo? localTipo = tipo;
+  RangeValues localRango = rango;
+  double localValor = valor;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setLocal) => AlertDialog(
+        title: const Text('Filtrar por Edad'),
+        content: SizedBox(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Sin filtro'),
+                    selected: localTipo == null,
+                    onSelected: (_) => setLocal(() => localTipo = null),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Rango'),
+                    selected: localTipo == _EdadFiltroTipo.rango,
+                    onSelected: (_) =>
+                        setLocal(() => localTipo = _EdadFiltroTipo.rango),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Mayor que'),
+                    selected: localTipo == _EdadFiltroTipo.mayorQue,
+                    onSelected: (_) =>
+                        setLocal(() => localTipo = _EdadFiltroTipo.mayorQue),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Menor que'),
+                    selected: localTipo == _EdadFiltroTipo.menorQue,
+                    onSelected: (_) =>
+                        setLocal(() => localTipo = _EdadFiltroTipo.menorQue),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (localTipo == _EdadFiltroTipo.rango) ...[
+                Text('${localRango.start.round()} – ${localRango.end.round()} años'),
+                RangeSlider(
+                  values: localRango,
+                  min: 0,
+                  max: 25,
+                  divisions: 25,
+                  labels: RangeLabels(
+                    localRango.start.round().toString(),
+                    localRango.end.round().toString(),
+                  ),
+                  onChanged: (v) => setLocal(() => localRango = v),
+                ),
+              ],
+              if (localTipo == _EdadFiltroTipo.mayorQue) ...[
+                Text('Mayor que ${localValor.round()} años'),
+                Slider(
+                  value: localValor,
+                  min: 0,
+                  max: 25,
+                  divisions: 25,
+                  label: '${localValor.round()}',
+                  onChanged: (v) => setLocal(() => localValor = v),
+                ),
+              ],
+              if (localTipo == _EdadFiltroTipo.menorQue) ...[
+                Text('Menor que ${localValor.round()} años'),
+                Slider(
+                  value: localValor,
+                  min: 0,
+                  max: 25,
+                  divisions: 25,
+                  label: '${localValor.round()}',
+                  onChanged: (v) => setLocal(() => localValor = v),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              onTipo(null);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Limpiar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              onTipo(localTipo);
+              onRango(localRango);
+              onValor(localValor);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Aplicar'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
 int? _calcularEdad(DateTime? fechaNacimiento) {
   if (fechaNacimiento == null) return null;
@@ -392,7 +765,39 @@ int? _calcularEdad(DateTime? fechaNacimiento) {
 class _BovinosDataTable extends StatelessWidget {
   final List<BovinoWithDueno> bovinos;
   final void Function(BovinoWithDueno) onDelete;
-  const _BovinosDataTable({required this.bovinos, required this.onDelete});
+  final _SortCampo? sortCampo;
+  final bool sortAscending;
+  final DataColumnSortCallback onSort;
+  final _EdadFiltroTipo? edadFiltroTipo;
+  final RangeValues edadRango;
+  final double edadValor;
+  final ValueChanged<_EdadFiltroTipo?> onEdadFiltroTipo;
+  final ValueChanged<RangeValues> onEdadRango;
+  final ValueChanged<double> onEdadValor;
+
+  const _BovinosDataTable({
+    required this.bovinos,
+    required this.onDelete,
+    required this.sortCampo,
+    required this.sortAscending,
+    required this.onSort,
+    required this.edadFiltroTipo,
+    required this.edadRango,
+    required this.edadValor,
+    required this.onEdadFiltroTipo,
+    required this.onEdadRango,
+    required this.onEdadValor,
+  });
+
+  void _showFiltroEdad(BuildContext context) => _mostrarFiltroEdad(
+        context,
+        tipo: edadFiltroTipo,
+        rango: edadRango,
+        valor: edadValor,
+        onTipo: onEdadFiltroTipo,
+        onRango: onEdadRango,
+        onValor: onEdadValor,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -401,17 +806,41 @@ class _BovinosDataTable extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         child: DataTable(
+          sortColumnIndex: _sortCampoToColIndex(sortCampo),
+          sortAscending: sortAscending,
           headingRowColor: WidgetStateProperty.all(
             Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
-          columns: const [
-            DataColumn(label: Text('Arete')),
-            DataColumn(label: Text('Nombre')),
-            DataColumn(label: Text('Dueño')),
-            DataColumn(label: Text('Sexo')),
-            DataColumn(label: Text('Edad'), numeric: true),
-            DataColumn(label: Text('Estado')),
-            DataColumn(label: Text('Acciones')),
+          columns: [
+            DataColumn(label: const Text('Arete'), onSort: onSort),
+            DataColumn(label: const Text('Nombre'), onSort: onSort),
+            DataColumn(label: const Text('Dueño'), onSort: onSort),
+            const DataColumn(label: Text('Sexo')),
+            DataColumn(
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Edad'),
+                  const SizedBox(width: 2),
+                  GestureDetector(
+                    onTap: () => _showFiltroEdad(context),
+                    child: Icon(
+                      edadFiltroTipo != null
+                          ? Icons.filter_alt
+                          : Icons.filter_alt_outlined,
+                      size: 15,
+                      color: edadFiltroTipo != null
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+              numeric: true,
+              onSort: onSort,
+            ),
+            const DataColumn(label: Text('Estado')),
+            const DataColumn(label: Text('Acciones')),
           ],
           rows: bovinos
               .map(
