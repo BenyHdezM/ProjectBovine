@@ -374,6 +374,19 @@ class _AdaptiveList extends StatelessWidget {
   }
 }
 
+// ─── Utilidad ────────────────────────────────────────────────────────────────
+
+int? _calcularEdad(DateTime? fechaNacimiento) {
+  if (fechaNacimiento == null) return null;
+  final hoy = DateTime.now();
+  int edad = hoy.year - fechaNacimiento.year;
+  if (hoy.month < fechaNacimiento.month ||
+      (hoy.month == fechaNacimiento.month && hoy.day < fechaNacimiento.day)) {
+    edad--;
+  }
+  return edad < 0 ? 0 : edad;
+}
+
 // ─── Vista de tabla (web / tablet) ───────────────────────────────────────────
 
 class _BovinosDataTable extends StatelessWidget {
@@ -396,6 +409,7 @@ class _BovinosDataTable extends StatelessWidget {
             DataColumn(label: Text('Nombre')),
             DataColumn(label: Text('Dueño')),
             DataColumn(label: Text('Sexo')),
+            DataColumn(label: Text('Edad'), numeric: true),
             DataColumn(label: Text('Estado')),
             DataColumn(label: Text('Acciones')),
           ],
@@ -407,6 +421,11 @@ class _BovinosDataTable extends StatelessWidget {
                     DataCell(Text(item.bovino.nombre ?? '—')),
                     DataCell(Text(item.dueno?.nombre ?? '—')),
                     DataCell(Text(item.bovino.sexo)),
+                    DataCell(Text(
+                      _calcularEdad(item.bovino.fechaNacimiento)
+                              ?.toString() ??
+                          '—',
+                    )),
                     DataCell(_EstadoChip(estado: item.bovino.estado)),
                     DataCell(Row(
                       mainAxisSize: MainAxisSize.min,
@@ -472,7 +491,9 @@ class _BovinosListView extends StatelessWidget {
           subtitle: Text(
             [
               if (item.bovino.nombre != null) item.bovino.nombre!,
-              if (item.dueno != null) 'Dueño: ${item.dueno!.nombre}',
+              if (item.dueno != null) item.dueno!.nombre,
+              if (_calcularEdad(item.bovino.fechaNacimiento) != null)
+                '${_calcularEdad(item.bovino.fechaNacimiento)} años',
             ].join(' · '),
           ),
           trailing: Row(
