@@ -170,4 +170,27 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
           ),
         );
       });
+
+  Future<ProgenieData?> getProgenieByBovinoId(int bovinoId) =>
+      (select(db.progenie)..where((p) => p.bovinoId.equals(bovinoId)))
+          .getSingleOrNull();
+
+  Future<void> upsertProgenie(
+    int bovinoId, {
+    int? madreId,
+    int? padreId,
+  }) async {
+    if (madreId == null && padreId == null) {
+      await (delete(db.progenie)..where((p) => p.bovinoId.equals(bovinoId)))
+          .go();
+      return;
+    }
+    await into(db.progenie).insertOnConflictUpdate(
+      ProgenieCompanion(
+        bovinoId: Value(bovinoId),
+        bovinaMadreId: Value(madreId),
+        bovinoPadreId: Value(padreId),
+      ),
+    );
+  }
 }

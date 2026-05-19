@@ -37,11 +37,22 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
 
+  Future<({int? madreId, int? padreId})?> getProgenie(int bovinoId) async {
+    final p = await ref
+        .read(appDatabaseProvider)
+        .bovinosDao
+        .getProgenieByBovinoId(bovinoId);
+    if (p == null) return null;
+    return (madreId: p.bovinaMadreId, padreId: p.bovinoPadreId);
+  }
+
   Future<String?> save({
     required BovinosCompanion bovino,
     int? duenoId,
     int? editId,
     DateTime? fechaVenta,
+    int? madreId,
+    int? padreId,
     List<File> newPhotoFiles = const [],
     List<int> deletedPhotoIds = const [],
   }) async {
@@ -51,11 +62,13 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
       final dao = ref.read(appDatabaseProvider).bovinosDao;
       final fotosDao = ref.read(appDatabaseProvider).fotosDao;
 
-      // Validar unicidad de arete_id
-      final existente = await dao.findByAreteId(bovino.areteId.value);
-      if (existente != null && existente.id != editId) {
-        state = const AsyncData(null);
-        return 'El arete "${bovino.areteId.value}" ya está registrado.';
+      // Validar unicidad de arete_id (solo si se proporcionó)
+      if (bovino.areteId.value.isNotEmpty) {
+        final existente = await dao.findByAreteId(bovino.areteId.value);
+        if (existente != null && existente.id != editId) {
+          state = const AsyncData(null);
+          return 'El arete "${bovino.areteId.value}" ya está registrado.';
+        }
       }
 
       // Validar unicidad de nombre (si se proporcionó)
@@ -83,6 +96,11 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
       // Si estado = vendido, guardar en tabla Ventas
       if (bovino.estado.value == 'vendido' && fechaVenta != null) {
         await dao.upsertVenta(bovinoId, fechaVenta);
+      }
+
+      // Progenie
+      if (editId != null || madreId != null || padreId != null) {
+        await dao.upsertProgenie(bovinoId, madreId: madreId, padreId: padreId);
       }
 
       // Eliminar fotos marcadas para borrado

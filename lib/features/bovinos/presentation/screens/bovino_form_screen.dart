@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../../../../core/utils/text_formatters.dart';
 import '../providers/bovinos_providers.dart';
 
@@ -39,6 +40,9 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   int? _razaId;
   int? _duenoId;
 
+  int? _madreId;
+  int? _padreId;
+
   final List<File> _newPhotoFiles = [];
   final Set<int> _deletedPhotoIds = {};
 
@@ -61,6 +65,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
       _fechaMuerte = b.fechaMuerte;
       _loteId = b.loteId;
       _razaId = b.razaId;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadProgenie());
     }
   }
 
@@ -71,6 +76,35 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     _nombreCtrl.dispose();
     _uppCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadProgenie() async {
+    final p = await ref
+        .read(bovinoFormProvider.notifier)
+        .getProgenie(widget.bovino!.id);
+    if (p != null && mounted) {
+      setState(() {
+        _madreId = p.madreId;
+        _padreId = p.padreId;
+      });
+    }
+  }
+
+  Future<void> _openBovinoSearch(
+    BuildContext context, {
+    required String label,
+    required List<BovinoWithDueno> candidates,
+    required ValueChanged<int?> onSelected,
+  }) async {
+    final result = await showModalBottomSheet<BovinoWithDueno>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _BovinoSearchSheet(label: label, candidates: candidates),
+    );
+    if (result != null && mounted) {
+      onSelected(result.bovino.id);
+    }
   }
 
   Future<void> _pickDate(
@@ -217,6 +251,8 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
           duenoId: _duenoId,
           editId: widget.bovino?.id,
           fechaVenta: _estado == 'vendido' ? _fechaVenta : null,
+          madreId: _madreId,
+          padreId: _padreId,
           newPhotoFiles: _newPhotoFiles,
           deletedPhotoIds: _deletedPhotoIds.toList(),
         );
@@ -294,6 +330,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     final lotesAsync = ref.watch(lotesListProvider);
     final razasAsync = ref.watch(razasListProvider);
     final duenosAsync = ref.watch(duenosListProvider);
+    final bovinos = ref.watch(bovinosListProvider).value ?? [];
     final isLoading = ref.watch(bovinoFormProvider).isLoading;
     final fotosAsync = _esEdicion
         ? ref.watch(fotosByBovinoProvider(widget.bovino!.id))
@@ -516,6 +553,48 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 ),
                 const SizedBox(height: 20),
 
+                // ── Progenie ──────────────────────────────────────────────────
+                const Text('Progenie',
+                    style: TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                _ProgenitorTile(
+                  label: 'Vaca Madre',
+                  icon: Icons.female_outlined,
+                  value: _getBovinoLabel(_madreId, bovinos),
+                  onTap: () => _openBovinoSearch(
+                    context,
+                    label: 'Vaca Madre',
+                    candidates: bovinos
+                        .where((b) =>
+                            b.bovino.sexo == 'H' &&
+                            b.bovino.id != widget.bovino?.id)
+                        .toList(),
+                    onSelected: (id) => setState(() => _madreId = id),
+                  ),
+                  onClear: _madreId != null
+                      ? () => setState(() => _madreId = null)
+                      : null,
+                ),
+                _ProgenitorTile(
+                  label: 'Toro Padre',
+                  icon: Icons.male_outlined,
+                  value: _getBovinoLabel(_padreId, bovinos),
+                  onTap: () => _openBovinoSearch(
+                    context,
+                    label: 'Toro Padre',
+                    candidates: bovinos
+                        .where((b) =>
+                            b.bovino.sexo == 'M' &&
+                            b.bovino.id != widget.bovino?.id)
+                        .toList(),
+                    onSelected: (id) => setState(() => _padreId = id),
+                  ),
+                  onClear: _padreId != null
+                      ? () => setState(() => _padreId = null)
+                      : null,
+                ),
+                const SizedBox(height: 20),
+
                 // ── Estado (solo en edición) ──────────────────────────────────
                 if (_esEdicion) ...[
                   const Text('Estado *',
@@ -713,3 +792,179 @@ class _PhotoThumb extends StatelessWidget {
 }
 
 enum _DateField { nacimiento, muerte, venta }
+
+String? _getBovinoLabel(int? id, List<BovinoWithDueno> list) {
+  if (id == null) return null;
+  final item = list.where((b) => b.bovino.id == id).firstOrNull;
+  if (item == null) return null;
+  final b = item.bovino;
+  final identifier =
+      b.areteId.isNotEmpty ? b.areteId : b.numRegistro ?? '';
+  if (b.nombre != null && b.nombre!.isNotEmpty) {
+    return identifier.isNotEmpty ? '${b.nombre} — $identifier' : b.nombre!;
+  }
+  return identifier.isNotEmpty ? identifier : '#${b.id}';
+}
+
+class _ProgenitorTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String? value;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+
+  const _ProgenitorTile({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.onTap,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon,
+          color: Theme.of(context).colorScheme.onSurfaceVariant),
+      title: Text(label),
+      subtitle: Text(
+        value ?? 'Sin selección',
+        style: value == null
+            ? TextStyle(color: Theme.of(context).colorScheme.outline)
+            : null,
+      ),
+      trailing: onClear != null
+          ? IconButton(
+              icon: const Icon(Icons.clear),
+              tooltip: 'Quitar',
+              onPressed: onClear,
+            )
+          : const Icon(Icons.search_outlined),
+      onTap: onTap,
+    );
+  }
+}
+
+class _BovinoSearchSheet extends StatefulWidget {
+  final String label;
+  final List<BovinoWithDueno> candidates;
+
+  const _BovinoSearchSheet({
+    required this.label,
+    required this.candidates,
+  });
+
+  @override
+  State<_BovinoSearchSheet> createState() => _BovinoSearchSheetState();
+}
+
+class _BovinoSearchSheetState extends State<_BovinoSearchSheet> {
+  final _searchCtrl = TextEditingController();
+  late List<BovinoWithDueno> _filtered;
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.candidates;
+    _searchCtrl.addListener(_filter);
+  }
+
+  void _filter() {
+    final q = _searchCtrl.text.trim().toLowerCase();
+    setState(() {
+      _filtered = q.isEmpty
+          ? widget.candidates
+          : widget.candidates.where((item) {
+              final b = item.bovino;
+              return b.areteId.toLowerCase().contains(q) ||
+                  (b.nombre?.toLowerCase().contains(q) ?? false) ||
+                  (b.numRegistro?.toLowerCase().contains(q) ?? false);
+            }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (ctx, scrollCtrl) => Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.outlineVariant,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Text(
+              'Seleccionar ${widget.label}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchCtrl,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Buscar por arete, núm. registro o nombre…',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: _searchCtrl.clear,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_filtered.isEmpty)
+            Expanded(
+              child: Center(
+                child: Text(
+                  'Sin resultados',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.outline),
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                controller: scrollCtrl,
+                itemCount: _filtered.length,
+                itemBuilder: (_, i) {
+                  final item = _filtered[i];
+                  final label = _getBovinoLabel(item.bovino.id,
+                      [item]) ?? item.bovino.areteId;
+                  return ListTile(
+                    title: Text(label),
+                    subtitle: item.dueno != null
+                        ? Text(item.dueno!.nombre,
+                            style: const TextStyle(fontSize: 12))
+                        : null,
+                    onTap: () => Navigator.pop(ctx, item),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
