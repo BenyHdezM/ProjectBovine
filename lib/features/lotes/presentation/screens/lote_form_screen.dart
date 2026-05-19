@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/database_provider.dart';
+import '../../../../core/utils/text_formatters.dart';
 import '../providers/lotes_providers.dart';
 
 class LoteFormScreen extends ConsumerStatefulWidget {
@@ -136,10 +137,11 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Clave *',
                     prefixIcon: Icon(Icons.label_outline),
-                    helperText: 'Código corto del lote (ej. R, O, H, E)',
+                    helperText: 'Codigo corto del lote (ej. R, O, H, E)',
                   ),
                   textCapitalization: TextCapitalization.characters,
                   maxLength: 10,
+                  inputFormatters: [NoAccentFormatter()],
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Campo requerido'
                       : null,

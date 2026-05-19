@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/database/app_database.dart';
+import '../../../../core/utils/text_formatters.dart';
 import '../providers/bovinos_providers.dart';
 
 class BovinoFormScreen extends ConsumerStatefulWidget {
@@ -321,6 +322,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                     prefixIcon: Icon(Icons.tag),
                   ),
                   textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [NoAccentFormatter()],
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
                 ),
@@ -335,6 +337,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                     helperText: 'Opcional — debe ser único',
                   ),
                   textCapitalization: TextCapitalization.words,
+                  inputFormatters: [NoAccentFormatter()],
                 ),
                 const SizedBox(height: 20),
 
@@ -432,8 +435,9 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                   decoration: const InputDecoration(
                     labelText: 'UPP',
                     prefixIcon: Icon(Icons.location_on_outlined),
-                    helperText: 'Unidad de Producción Pecuaria',
+                    helperText: 'Unidad de Produccion Pecuaria',
                   ),
+                  inputFormatters: [NoAccentFormatter()],
                 ),
                 const SizedBox(height: 16),
 

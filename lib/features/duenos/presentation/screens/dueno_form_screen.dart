@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/database_provider.dart';
+import '../../../../core/utils/text_formatters.dart';
 import '../providers/duenos_providers.dart';
 
 class DuenoFormScreen extends ConsumerStatefulWidget {
@@ -139,6 +140,7 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                   textCapitalization: TextCapitalization.words,
+                  inputFormatters: [NoAccentFormatter()],
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
                 ),
@@ -146,7 +148,7 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
                 TextFormField(
                   controller: _telefonoCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Teléfono',
+                    labelText: 'Telefono',
                     prefixIcon: Icon(Icons.phone_outlined),
                   ),
                   keyboardType: TextInputType.phone,

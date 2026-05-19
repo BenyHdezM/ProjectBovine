@@ -65,10 +65,10 @@ Future<void> seedTestData(AppDatabase db) async {
 
   // ── Dueños ─────────────────────────────────────────────────────────────────
   const duenoData = [
-    ('Benito Hernández', '555-101-0001'),
-    ('María González',   '555-101-0002'),
-    ('Carlos Martínez',  null),
-    ('Rosa Ávila',       '555-101-0003'),
+    ('Benito Hernandez', '555-101-0001'),
+    ('Maria Gonzalez',   '555-101-0002'),
+    ('Carlos Martinez',  null),
+    ('Rosa Avila',       '555-101-0003'),
   ];
   final duenoIds = <int>[];
   for (final (nombre, tel) in duenoData) {
