@@ -991,6 +991,14 @@ class _BovinosDataTable extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
+                          icon: const Icon(Icons.visibility_outlined),
+                          tooltip: 'Ver detalle',
+                          onPressed: () => context.push(
+                            '/bovinos/${item.bovino.id}/detail',
+                            extra: item,
+                          ),
+                        ),
+                        IconButton(
                           icon: const Icon(Icons.edit_outlined),
                           tooltip: 'Editar',
                           onPressed: () => context.push(
@@ -1078,8 +1086,8 @@ class _BovinosListView extends StatelessWidget {
             ],
           ),
           onTap: () => context.push(
-            '/bovinos/${item.bovino.id}',
-            extra: item.bovino,
+            '/bovinos/${item.bovino.id}/detail',
+            extra: item,
           ),
         );
       },

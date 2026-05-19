@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 import '../core/database/app_database.dart';
+import '../core/database/models/bovino_with_dueno.dart';
+import '../features/bovinos/presentation/screens/bovino_detail_screen.dart';
 import '../features/bovinos/presentation/screens/bovino_form_screen.dart';
 import '../features/bovinos/presentation/screens/bovinos_list_screen.dart';
 import '../features/duenos/presentation/screens/dueno_form_screen.dart';
@@ -23,6 +25,13 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final bovino = state.extra as Bovino?;
         return BovinoFormScreen(bovino: bovino);
+      },
+    ),
+    GoRoute(
+      path: '/bovinos/:id/detail',
+      builder: (context, state) {
+        final item = state.extra as BovinoWithDueno;
+        return BovinoDetailScreen(item: item);
       },
     ),
     GoRoute(
