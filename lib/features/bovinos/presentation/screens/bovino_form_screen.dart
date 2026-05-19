@@ -300,15 +300,19 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
               ]
             : null,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final hPad = constraints.maxWidth > 600 ? 24.0 : 20.0;
+          return SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),
+            child: Center(
+              child: Form(
+                key: _formKey,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                 // ── Fotos ─────────────────────────────────────────────────────
                 _buildFotosSection(fotosAsync),
                 const Divider(),
@@ -562,10 +566,13 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                     ],
                   ],
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
