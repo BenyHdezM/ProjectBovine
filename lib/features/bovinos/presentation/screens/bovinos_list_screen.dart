@@ -306,100 +306,97 @@ class _Filtros extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // ── Chips de estado y sexo ─────────────────────────────────────────
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _FiltroChip(
-                  label: 'Todos',
-                  selected: estadoFilter == null,
-                  onTap: () => onEstado(null),
-                ),
-                _FiltroChip(
-                  label: 'Activo',
-                  selected: estadoFilter == 'activo',
-                  color: Colors.green,
-                  onTap: () =>
-                      onEstado(estadoFilter == 'activo' ? null : 'activo'),
-                ),
-                _FiltroChip(
-                  label: 'Vendido',
-                  selected: estadoFilter == 'vendido',
-                  color: Colors.orange,
-                  onTap: () =>
-                      onEstado(estadoFilter == 'vendido' ? null : 'vendido'),
-                ),
-                _FiltroChip(
-                  label: 'Muerto',
-                  selected: estadoFilter == 'muerto',
-                  color: Colors.grey,
-                  onTap: () =>
-                      onEstado(estadoFilter == 'muerto' ? null : 'muerto'),
-                ),
-                const SizedBox(width: 12),
-                const VerticalDivider(width: 1, indent: 4, endIndent: 4),
-                const SizedBox(width: 12),
-                _FiltroChip(
-                  label: switch (sexoFilter) {
-                    'H' => 'Hembra',
-                    'M' => 'Macho',
-                    _ => 'Sexo',
-                  },
-                  selected: sexoFilter != null,
-                  color: Colors.purple,
-                  onTap: () => _mostrarFiltroSexo(context, sexo: sexoFilter, onSexo: onSexo),
-                ),
-                const SizedBox(width: 12),
-                const VerticalDivider(width: 1, indent: 4, endIndent: 4),
-                const SizedBox(width: 12),
-                _FiltroChip(
-                  label: edadFiltroTipo == null
-                      ? 'Edad'
-                      : switch (edadFiltroTipo!) {
-                          _EdadFiltroTipo.rango =>
-                            '${edadRango.start.round()}–${edadRango.end.round()} a',
-                          _EdadFiltroTipo.mayorQue =>
-                            '> ${edadValor.round()} a',
-                          _EdadFiltroTipo.menorQue =>
-                            '< ${edadValor.round()} a',
+          // ── Chips de filtros ───────────────────────────────────────────────
+          Row(
+            children: [
+              Text(
+                'Filtros:',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _FiltroChip(
+                        label: switch (estadoFilter) {
+                          'activo' => 'Activo',
+                          'vendido' => 'Vendido',
+                          'muerto' => 'Muerto',
+                          _ => 'Estado',
                         },
-                  selected: edadFiltroTipo != null,
-                  color: Colors.teal,
-                  onTap: () => _mostrarFiltroEdad(
-                    context,
-                    tipo: edadFiltroTipo,
-                    rango: edadRango,
-                    valor: edadValor,
-                    onTipo: onEdadFiltroTipo,
-                    onRango: onEdadRango,
-                    onValor: onEdadValor,
+                        selected: estadoFilter != null,
+                        color: switch (estadoFilter) {
+                          'activo' => Colors.green,
+                          'vendido' => Colors.orange,
+                          'muerto' => Colors.grey,
+                          _ => null,
+                        },
+                        onTap: () => _mostrarFiltroEstado(context,
+                            estado: estadoFilter, onEstado: onEstado),
+                      ),
+                      _FiltroChip(
+                        label: switch (sexoFilter) {
+                          'H' => 'Hembra',
+                          'M' => 'Macho',
+                          _ => 'Sexo',
+                        },
+                        selected: sexoFilter != null,
+                        color: Colors.purple,
+                        onTap: () => _mostrarFiltroSexo(context,
+                            sexo: sexoFilter, onSexo: onSexo),
+                      ),
+                      _FiltroChip(
+                        label: edadFiltroTipo == null
+                            ? 'Edad'
+                            : switch (edadFiltroTipo!) {
+                                _EdadFiltroTipo.rango =>
+                                  '${edadRango.start.round()}–${edadRango.end.round()} a',
+                                _EdadFiltroTipo.mayorQue =>
+                                  '> ${edadValor.round()} a',
+                                _EdadFiltroTipo.menorQue =>
+                                  '< ${edadValor.round()} a',
+                              },
+                        selected: edadFiltroTipo != null,
+                        color: Colors.teal,
+                        onTap: () => _mostrarFiltroEdad(
+                          context,
+                          tipo: edadFiltroTipo,
+                          rango: edadRango,
+                          valor: edadValor,
+                          onTipo: onEdadFiltroTipo,
+                          onRango: onEdadRango,
+                          onValor: onEdadValor,
+                        ),
+                      ),
+                      _FiltroChip(
+                        label: sortCampo == null
+                            ? 'Ordenar'
+                            : '${switch (sortCampo!) {
+                                _SortCampo.arete => 'Arete',
+                                _SortCampo.nombre => 'Nombre',
+                                _SortCampo.dueno => 'Dueño',
+                                _SortCampo.edad => 'Edad',
+                              }} ${sortAscending ? '↑' : '↓'}',
+                        selected: sortCampo != null,
+                        color: Colors.indigo,
+                        onTap: () => _mostrarOrdenarPor(
+                          context,
+                          campo: sortCampo,
+                          ascending: sortAscending,
+                          onCampo: onSortCampo,
+                          onAscending: onSortAscending,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                const VerticalDivider(width: 1, indent: 4, endIndent: 4),
-                const SizedBox(width: 12),
-                _FiltroChip(
-                  label: sortCampo == null
-                      ? 'Ordenar'
-                      : '${switch (sortCampo!) {
-                          _SortCampo.arete => 'Arete',
-                          _SortCampo.nombre => 'Nombre',
-                          _SortCampo.dueno => 'Dueño',
-                          _SortCampo.edad => 'Edad',
-                        }} ${sortAscending ? '↑' : '↓'}',
-                  selected: sortCampo != null,
-                  color: Colors.indigo,
-                  onTap: () => _mostrarOrdenarPor(
-                    context,
-                    campo: sortCampo,
-                    ascending: sortAscending,
-                    onCampo: onSortCampo,
-                    onAscending: onSortAscending,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
 
@@ -433,7 +430,7 @@ class _FiltroChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = color ?? Theme.of(context).colorScheme.primary;
     return Padding(
-      padding: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.only(right: 4),
       child: FilterChip(
         label: Text(label),
         selected: selected,
@@ -627,6 +624,49 @@ void _mostrarOrdenarPor(
           ),
         ],
       ),
+    ),
+  );
+}
+
+void _mostrarFiltroEstado(
+  BuildContext context, {
+  required String? estado,
+  required ValueChanged<String?> onEstado,
+}) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Filtrar por Estado'),
+      content: SizedBox(
+        width: 320,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            ChoiceChip(
+              label: const Text('Activo'),
+              selected: estado == 'activo',
+              onSelected: (_) { onEstado('activo'); Navigator.pop(ctx); },
+            ),
+            ChoiceChip(
+              label: const Text('Vendido'),
+              selected: estado == 'vendido',
+              onSelected: (_) { onEstado('vendido'); Navigator.pop(ctx); },
+            ),
+            ChoiceChip(
+              label: const Text('Muerto'),
+              selected: estado == 'muerto',
+              onSelected: (_) { onEstado('muerto'); Navigator.pop(ctx); },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () { onEstado(null); Navigator.pop(ctx); },
+          child: const Text('Limpiar'),
+        ),
+      ],
     ),
   );
 }
