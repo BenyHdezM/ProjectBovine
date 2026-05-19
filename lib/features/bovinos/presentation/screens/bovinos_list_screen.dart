@@ -10,7 +10,7 @@ import '../providers/bovinos_providers.dart';
 
 enum _EdadFiltroTipo { fijo, rango, mayorQue, menorQue }
 
-enum _SortCampo { numRegistro, arete, nombre, dueno, edad }
+enum _SortCampo { numRegistro, arete, nombre, dueno, edad, estado }
 
 class BovinosListScreen extends ConsumerStatefulWidget {
   const BovinosListScreen({super.key});
@@ -123,6 +123,8 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
             (a.dueno?.nombre ?? '').compareTo(b.dueno?.nombre ?? ''),
           _SortCampo.edad => (_calcularEdad(a.bovino.fechaNacimiento) ?? -1)
               .compareTo(_calcularEdad(b.bovino.fechaNacimiento) ?? -1),
+          _SortCampo.estado =>
+            a.bovino.estado.compareTo(b.bovino.estado),
         };
         return _sortAscending ? cmp : -cmp;
       });
@@ -293,7 +295,7 @@ class _Filtros extends StatelessWidget {
           TextField(
             controller: searchCtrl,
             decoration: InputDecoration(
-              hintText: 'Buscar por arete, nombre o dueño…',
+              hintText: 'Buscar por arete, num_reg, nombre o dueño…',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -390,6 +392,7 @@ class _Filtros extends StatelessWidget {
                                 _SortCampo.nombre => 'Nombre',
                                 _SortCampo.dueno => 'Dueño',
                                 _SortCampo.edad => 'Edad',
+                                _SortCampo.estado => 'Estado',
                               }} ${sortAscending ? '↑' : '↓'}',
                         selected: sortCampo != null,
                         color: Colors.indigo,
@@ -546,20 +549,22 @@ class _AdaptiveList extends StatelessWidget {
 // ─── Utilidades ──────────────────────────────────────────────────────────────
 
 int? _sortCampoToColIndex(_SortCampo? campo) => switch (campo) {
-  _SortCampo.numRegistro => 0,
-  _SortCampo.arete => 1,
+  _SortCampo.arete => 0,
+  _SortCampo.numRegistro => 1,
   _SortCampo.nombre => 2,
   _SortCampo.dueno => 3,
   _SortCampo.edad => 5,
+  _SortCampo.estado => 6,
   null => null,
 };
 
 _SortCampo? _colIndexToSortCampo(int index) => switch (index) {
-  0 => _SortCampo.numRegistro,
-  1 => _SortCampo.arete,
+  0 => _SortCampo.arete,
+  1 => _SortCampo.numRegistro,
   2 => _SortCampo.nombre,
   3 => _SortCampo.dueno,
   5 => _SortCampo.edad,
+  6 => _SortCampo.estado,
   _ => null,
 };
 
@@ -596,6 +601,7 @@ void _mostrarOrdenarPor(
                 DropdownMenuItem(value: _SortCampo.nombre, child: Text('Nombre')),
                 DropdownMenuItem(value: _SortCampo.dueno, child: Text('Dueño')),
                 DropdownMenuItem(value: _SortCampo.edad, child: Text('Edad')),
+                DropdownMenuItem(value: _SortCampo.estado, child: Text('Estado')),
               ],
               onChanged: (v) => setLocal(() => localCampo = v),
             ),
@@ -939,19 +945,22 @@ class _BovinosDataTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: DataTable(
-          sortColumnIndex: _sortCampoToColIndex(sortCampo),
-          sortAscending: sortAscending,
-          headingRowColor: WidgetStateProperty.all(
-            Theme.of(context).colorScheme.surfaceContainerHighest,
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth - 32),
+            child: DataTable(
+              sortColumnIndex: _sortCampoToColIndex(sortCampo),
+              sortAscending: sortAscending,
+              headingRowColor: WidgetStateProperty.all(
+                Theme.of(context).colorScheme.surfaceContainerHighest,
+              ),
           columns: [
-            DataColumn(label: const Text('Núm. Reg.'), onSort: onSort),
             DataColumn(label: const Text('Arete'), onSort: onSort),
+            DataColumn(label: const Text('Núm. Reg.'), onSort: onSort),
             DataColumn(label: const Text('Nombre'), onSort: onSort),
             DataColumn(label: const Text('Dueño'), onSort: onSort),
             const DataColumn(label: Text('Sexo')),
@@ -978,15 +987,15 @@ class _BovinosDataTable extends StatelessWidget {
               numeric: true,
               onSort: onSort,
             ),
-            const DataColumn(label: Text('Estado')),
+            DataColumn(label: const Text('Estado'), onSort: onSort),
             const DataColumn(label: Text('Acciones')),
           ],
           rows: bovinos
               .map(
                 (item) => DataRow(
                   cells: [
-                    DataCell(Text(item.bovino.numRegistro ?? '—')),
                     DataCell(Text(item.bovino.areteId)),
+                    DataCell(Text(item.bovino.numRegistro ?? '—')),
                     DataCell(Text(item.bovino.nombre ?? '—')),
                     DataCell(Text(item.dueno?.nombre ?? '—')),
                     DataCell(Text(item.bovino.sexo)),
@@ -1027,6 +1036,8 @@ class _BovinosDataTable extends StatelessWidget {
                 ),
               )
               .toList(),
+            ),
+          ),
         ),
       ),
     );
