@@ -31,6 +31,14 @@ final fotosByBovinoProvider =
   return ref.watch(appDatabaseProvider).fotosDao.watchFotosByBovinoId(bovinoId);
 });
 
+final partosByBovinoProvider =
+    StreamProvider.family<List<Parto>, int>((ref, bovinoId) {
+  return ref
+      .watch(appDatabaseProvider)
+      .bovinosDao
+      .watchPartosByBovinoId(bovinoId);
+});
+
 // ─── Formulario de bovino ────────────────────────────────────────────────────
 
 class BovinoFormNotifier extends AsyncNotifier<void> {
@@ -99,8 +107,23 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
       }
 
       // Progenie
+      int? oldMadreId;
+      if (editId != null) {
+        final existing = await dao.getProgenieByBovinoId(editId);
+        oldMadreId = existing?.bovinaMadreId;
+      }
       if (editId != null || madreId != null || padreId != null) {
         await dao.upsertProgenie(bovinoId, madreId: madreId, padreId: padreId);
+      }
+
+      // Auto-parto cuando se asigna o cambia la madre y hay fecha de nacimiento
+      if (madreId != null &&
+          madreId != oldMadreId &&
+          bovino.fechaNacimiento.value != null) {
+        await dao.insertParto(PartosCompanion(
+          bovinoId: Value(madreId),
+          fechaParto: Value(bovino.fechaNacimiento.value!),
+        ));
       }
 
       // Eliminar fotos marcadas para borrado
@@ -174,3 +197,56 @@ class BovinoFormNotifier extends AsyncNotifier<void> {
 
 final bovinoFormProvider =
     AsyncNotifierProvider<BovinoFormNotifier, void>(BovinoFormNotifier.new);
+
+// ─── Formulario de parto ─────────────────────────────────────────────────────
+
+class PartoFormNotifier extends AsyncNotifier<void> {
+  @override
+  FutureOr<void> build() {}
+
+  Future<String?> saveParto({
+    required int bovinoId,
+    required DateTime fechaParto,
+    String? notas,
+    int? editId,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final dao = ref.read(appDatabaseProvider).bovinosDao;
+      if (editId == null) {
+        await dao.insertParto(PartosCompanion(
+          bovinoId: Value(bovinoId),
+          fechaParto: Value(fechaParto),
+          notas: Value(notas),
+        ));
+      } else {
+        await dao.updateParto(PartosCompanion(
+          id: Value(editId),
+          bovinoId: Value(bovinoId),
+          fechaParto: Value(fechaParto),
+          notas: Value(notas),
+        ));
+      }
+      state = const AsyncData(null);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return e.toString();
+    }
+  }
+
+  Future<String?> deleteParto(int id) async {
+    state = const AsyncLoading();
+    try {
+      await ref.read(appDatabaseProvider).bovinosDao.deleteParto(id);
+      state = const AsyncData(null);
+      return null;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return e.toString();
+    }
+  }
+}
+
+final partoFormProvider =
+    AsyncNotifierProvider<PartoFormNotifier, void>(PartoFormNotifier.new);

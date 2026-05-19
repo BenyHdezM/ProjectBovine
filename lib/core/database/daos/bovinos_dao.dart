@@ -171,6 +171,25 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
         );
       });
 
+  // ── Partos ────────────────────────────────────────────────────────────────
+
+  Stream<List<Parto>> watchPartosByBovinoId(int bovinoId) =>
+      (select(db.partos)
+            ..where((p) => p.bovinoId.equals(bovinoId))
+            ..orderBy([(p) => OrderingTerm.desc(p.fechaParto)]))
+          .watch();
+
+  Future<int> insertParto(PartosCompanion parto) =>
+      into(db.partos).insert(parto);
+
+  Future<bool> updateParto(PartosCompanion parto) =>
+      update(db.partos).replace(parto);
+
+  Future<int> deleteParto(int id) =>
+      (delete(db.partos)..where((p) => p.id.equals(id))).go();
+
+  // ── Progenie ──────────────────────────────────────────────────────────────
+
   Future<ProgenieData?> getProgenieByBovinoId(int bovinoId) =>
       (select(db.progenie)..where((p) => p.bovinoId.equals(bovinoId)))
           .getSingleOrNull();
@@ -185,12 +204,14 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
           .go();
       return;
     }
-    await into(db.progenie).insertOnConflictUpdate(
-      ProgenieCompanion(
-        bovinoId: Value(bovinoId),
-        bovinaMadreId: Value(madreId),
-        bovinoPadreId: Value(padreId),
-      ),
+    final companion = ProgenieCompanion(
+      bovinoId: Value(bovinoId),
+      bovinaMadreId: Value(madreId),
+      bovinoPadreId: Value(padreId),
+    );
+    await into(db.progenie).insert(
+      companion,
+      onConflict: DoUpdate((_) => companion, target: [db.progenie.bovinoId]),
     );
   }
 }

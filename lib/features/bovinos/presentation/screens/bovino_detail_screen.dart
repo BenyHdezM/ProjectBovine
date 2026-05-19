@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/database/app_database.dart';
 import '../../../../core/database/models/bovino_with_dueno.dart';
 import '../providers/bovinos_providers.dart';
 
@@ -197,6 +198,9 @@ class BovinoDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
 
+                    // ── Partos (solo hembras) ─────────────────────────────
+                    if (b.sexo == 'H') _PartosSection(bovinoId: b.id),
+
                     // ── Registro ─────────────────────────────────────────
                     const _SectionLabel('Registro'),
                     _InfoRow(
@@ -302,6 +306,310 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
+
+// ─── Partos ───────────────────────────────────────────────────────────────────
+
+class _PartosSection extends ConsumerWidget {
+  final int bovinoId;
+
+  const _PartosSection({required this.bovinoId});
+
+  void _openDialog(BuildContext context, {Parto? existing}) {
+    showDialog(
+      context: context,
+      builder: (_) => _PartoDialog(bovinoId: bovinoId, existing: existing),
+    );
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar parto'),
+        content: const Text('¿Confirmas eliminar este registro?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      final error =
+          await ref.read(partoFormProvider.notifier).deleteParto(id);
+      if (error != null && context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error)));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final partosAsync = ref.watch(partosByBovinoProvider(bovinoId));
+    final fmt = DateFormat('dd/MM/yyyy');
+
+    return partosAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (partos) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'PARTOS',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Agregar'),
+                onPressed: () => _openDialog(context),
+              ),
+            ],
+          ),
+          if (partos.isNotEmpty) ...[
+            _buildStats(context, partos, fmt),
+            const SizedBox(height: 4),
+          ],
+          if (partos.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Sin partos registrados',
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                    fontSize: 13),
+              ),
+            )
+          else
+            ...partos.map((p) => _PartoTile(
+                  parto: p,
+                  fmt: fmt,
+                  onEdit: () => _openDialog(context, existing: p),
+                  onDelete: () => _confirmDelete(context, ref, p.id),
+                )),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStats(
+      BuildContext context, List<Parto> partos, DateFormat fmt) {
+    final total = partos.length;
+    final ultimo = partos.first;
+
+    String? intervalo;
+    if (partos.length >= 2) {
+      int totalDays = 0;
+      for (int i = 0; i < partos.length - 1; i++) {
+        totalDays += partos[i]
+            .fechaParto
+            .difference(partos[i + 1].fechaParto)
+            .inDays
+            .abs();
+      }
+      final avgMonths =
+          (totalDays / (partos.length - 1) / 30.4).round();
+      intervalo = '~$avgMonths meses';
+    }
+
+    final parts = [
+      '$total ${total == 1 ? "parto" : "partos"}',
+      'Último: ${fmt.format(ultimo.fechaParto)}',
+      if (intervalo != null) 'Intervalo: $intervalo',
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        parts.join('  ·  '),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+      ),
+    );
+  }
+}
+
+class _PartoTile extends StatelessWidget {
+  final Parto parto;
+  final DateFormat fmt;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _PartoTile({
+    required this.parto,
+    required this.fmt,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading:
+          Icon(Icons.child_care_outlined, color: Theme.of(context).colorScheme.outline),
+      title: Text(fmt.format(parto.fechaParto)),
+      subtitle: parto.notas != null
+          ? Text(parto.notas!, style: const TextStyle(fontSize: 12))
+          : null,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            tooltip: 'Editar',
+            onPressed: onEdit,
+          ),
+          IconButton(
+            icon: Icon(Icons.delete_outline,
+                size: 18,
+                color: Theme.of(context).colorScheme.error),
+            tooltip: 'Eliminar',
+            onPressed: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PartoDialog extends ConsumerStatefulWidget {
+  final int bovinoId;
+  final Parto? existing;
+
+  const _PartoDialog({required this.bovinoId, this.existing});
+
+  @override
+  ConsumerState<_PartoDialog> createState() => _PartoDialogState();
+}
+
+class _PartoDialogState extends ConsumerState<_PartoDialog> {
+  final _fmt = DateFormat('dd/MM/yyyy');
+  DateTime? _fecha;
+  late final TextEditingController _notasCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fecha = widget.existing?.fechaParto;
+    _notasCtrl = TextEditingController(text: widget.existing?.notas ?? '');
+  }
+
+  @override
+  void dispose() {
+    _notasCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _fecha ?? DateTime.now(),
+      firstDate: DateTime(1990),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _fecha = picked);
+  }
+
+  Future<void> _save() async {
+    if (_fecha == null) return;
+    final error = await ref.read(partoFormProvider.notifier).saveParto(
+          bovinoId: widget.bovinoId,
+          fechaParto: _fecha!,
+          notas: _notasCtrl.text.trim().isEmpty
+              ? null
+              : _notasCtrl.text.trim(),
+          editId: widget.existing?.id,
+        );
+    if (!mounted) return;
+    if (error != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = ref.watch(partoFormProvider).isLoading;
+
+    return AlertDialog(
+      title: Text(
+          widget.existing == null ? 'Registrar parto' : 'Editar parto'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.calendar_month_outlined,
+              color: _fecha == null
+                  ? Theme.of(context).colorScheme.error
+                  : null,
+            ),
+            title: const Text('Fecha del parto *'),
+            subtitle: Text(
+              _fecha != null ? _fmt.format(_fecha!) : 'Toca para seleccionar',
+              style: _fecha == null
+                  ? TextStyle(
+                      color: Theme.of(context).colorScheme.error)
+                  : null,
+            ),
+            onTap: _pickDate,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _notasCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Notas',
+              hintText: 'Opcional',
+              prefixIcon: Icon(Icons.notes_outlined),
+            ),
+            maxLines: 2,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: isLoading ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: (isLoading || _fecha == null) ? null : _save,
+          child: isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(
+                  widget.existing == null ? 'Registrar' : 'Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Fotos viewer ─────────────────────────────────────────────────────────────
 
 void _showPhotoViewer(
     BuildContext context, List<String> paths, int initialIndex) {
