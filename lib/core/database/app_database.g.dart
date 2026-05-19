@@ -203,8 +203,7 @@ class $LotesTable extends Lotes with TableInfo<$LotesTable, Lote> {
       'clave', aliasedName, false,
       type: DriftSqlType.string,
       requiredDuringInsert: true,
-      $customConstraints:
-          'NOT NULL UNIQUE CHECK(clave IN (\'R\',\'O\',\'H\',\'E\'))');
+      $customConstraints: 'NOT NULL UNIQUE');
   static const VerificationMeta _descripcionMeta =
       const VerificationMeta('descripcion');
   @override

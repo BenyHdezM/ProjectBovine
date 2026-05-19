@@ -114,6 +114,11 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
               },
             ),
           IconButton(
+            icon: const Icon(Icons.category_outlined),
+            tooltip: 'Lotes',
+            onPressed: () => context.push('/lotes'),
+          ),
+          IconButton(
             icon: const Icon(Icons.people_outline),
             tooltip: 'Dueños',
             onPressed: () => context.push('/duenos'),

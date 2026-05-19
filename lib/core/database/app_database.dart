@@ -44,13 +44,30 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
           await _seedData();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            // Recreate lotes without the CHECK(clave IN ...) constraint
+            await customStatement('PRAGMA foreign_keys = OFF');
+            await customStatement('''
+              CREATE TABLE lotes_new (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                clave TEXT NOT NULL UNIQUE,
+                descripcion TEXT
+              )
+            ''');
+            await customStatement('INSERT INTO lotes_new SELECT id, clave, descripcion FROM lotes');
+            await customStatement('DROP TABLE lotes');
+            await customStatement('ALTER TABLE lotes_new RENAME TO lotes');
+            await customStatement('PRAGMA foreign_keys = ON');
+          }
         },
       );
 
@@ -61,6 +78,7 @@ class AppDatabase extends _$AppDatabase {
         const LotesCompanion(clave: Value('O'), descripcion: Value('Ordeña')),
         const LotesCompanion(clave: Value('H'), descripcion: Value('Horras')),
         const LotesCompanion(clave: Value('E'), descripcion: Value('Engorda')),
+        const LotesCompanion(clave: Value('C'), descripcion: Value('Crías')),
       ]);
       b.insertAll(razas, const [
         RazasCompanion(nombre: Value('Angus')),

@@ -64,6 +64,16 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
   Future<List<Lote>> getAllLotes() => select(db.lotes).get();
   Stream<List<Lote>> watchAllLotes() => select(db.lotes).watch();
 
+  Future<int> insertLote(LotesCompanion lote) => into(db.lotes).insert(lote);
+
+  Future<bool> updateLote(LotesCompanion lote) => update(db.lotes).replace(lote);
+
+  Future<void> deleteLoteClean(int id) => transaction(() async {
+        await (update(db.bovinos)..where((b) => b.loteId.equals(id)))
+            .write(const BovinosCompanion(loteId: Value(null)));
+        await (delete(db.lotes)..where((l) => l.id.equals(id))).go();
+      });
+
   /// Inserta un bovino y opcionalmente le asigna un dueño en una transacción.
   Future<int> insertBovinoWithDueno(
     BovinosCompanion bovino, {

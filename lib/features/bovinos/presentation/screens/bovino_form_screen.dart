@@ -370,19 +370,31 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 lotesAsync.when(
                   loading: () => const LinearProgressIndicator(),
                   error: (_, __) => const SizedBox(),
-                  data: (lotes) => DropdownButtonFormField<int>(
-                    initialValue: _loteId,
-                    decoration: const InputDecoration(
-                      labelText: 'Lote',
-                      prefixIcon: Icon(Icons.category_outlined),
-                    ),
-                    items: lotes
-                        .map((l) => DropdownMenuItem(
-                              value: l.id,
-                              child: Text('${l.clave} — ${l.descripcion ?? ''}'),
-                            ))
-                        .toList(),
-                    onChanged: (v) => setState(() => _loteId = v),
+                  data: (lotes) => Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _loteId,
+                          decoration: const InputDecoration(
+                            labelText: 'Lote',
+                            prefixIcon: Icon(Icons.category_outlined),
+                          ),
+                          items: lotes
+                              .map((l) => DropdownMenuItem(
+                                    value: l.id,
+                                    child: Text(
+                                        '${l.clave} — ${l.descripcion ?? ''}'),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => _loteId = v),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_box_outlined),
+                        tooltip: 'Nuevo lote',
+                        onPressed: () => context.push('/lotes/new'),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
