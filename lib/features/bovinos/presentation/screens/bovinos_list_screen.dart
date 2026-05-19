@@ -341,16 +341,14 @@ class _Filtros extends StatelessWidget {
                 const VerticalDivider(width: 1, indent: 4, endIndent: 4),
                 const SizedBox(width: 12),
                 _FiltroChip(
-                  label: 'Hembra',
-                  selected: sexoFilter == 'H',
-                  color: Colors.pink,
-                  onTap: () => onSexo(sexoFilter == 'H' ? null : 'H'),
-                ),
-                _FiltroChip(
-                  label: 'Macho',
-                  selected: sexoFilter == 'M',
-                  color: Colors.blue,
-                  onTap: () => onSexo(sexoFilter == 'M' ? null : 'M'),
+                  label: switch (sexoFilter) {
+                    'H' => 'Hembra',
+                    'M' => 'Macho',
+                    _ => 'Sexo',
+                  },
+                  selected: sexoFilter != null,
+                  color: Colors.purple,
+                  onTap: () => _mostrarFiltroSexo(context, sexo: sexoFilter, onSexo: onSexo),
                 ),
                 const SizedBox(width: 12),
                 const VerticalDivider(width: 1, indent: 4, endIndent: 4),
@@ -633,6 +631,44 @@ void _mostrarOrdenarPor(
   );
 }
 
+void _mostrarFiltroSexo(
+  BuildContext context, {
+  required String? sexo,
+  required ValueChanged<String?> onSexo,
+}) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Filtrar por Sexo'),
+      content: SizedBox(
+        width: 320,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: [
+            ChoiceChip(
+              label: const Text('Hembra'),
+              selected: sexo == 'H',
+              onSelected: (_) { onSexo('H'); Navigator.pop(ctx); },
+            ),
+            ChoiceChip(
+              label: const Text('Macho'),
+              selected: sexo == 'M',
+              onSelected: (_) { onSexo('M'); Navigator.pop(ctx); },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () { onSexo(null); Navigator.pop(ctx); },
+          child: const Text('Limpiar'),
+        ),
+      ],
+    ),
+  );
+}
+
 void _mostrarFiltroEdad(
   BuildContext context, {
   required _EdadFiltroTipo? tipo,
@@ -661,11 +697,6 @@ void _mostrarFiltroEdad(
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  ChoiceChip(
-                    label: const Text('Sin filtro'),
-                    selected: localTipo == null,
-                    onSelected: (_) => setLocal(() => localTipo = null),
-                  ),
                   ChoiceChip(
                     label: const Text('Rango'),
                     selected: localTipo == _EdadFiltroTipo.rango,
