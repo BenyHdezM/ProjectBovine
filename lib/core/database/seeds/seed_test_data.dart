@@ -60,17 +60,8 @@ const List<_BovinoRow> _datos = [
 /// con registros reales. Idempotente: omite bovinos ya existentes.
 Future<void> seedTestData(AppDatabase db) async {
   // ── Razas ──────────────────────────────────────────────────────────────────
-  const razaNombres = [
-    'Charolais', 'Brahman', 'Simmental', 'Angus',
-    'Hereford', 'Suizo', 'Gyr', 'Criollo',
-  ];
-  final razaIds = <int>[];
-  for (final nombre in razaNombres) {
-    final id = await db
-        .into(db.razas)
-        .insertOnConflictUpdate(RazasCompanion(nombre: Value(nombre)));
-    razaIds.add(id);
-  }
+  final razaRows = await db.select(db.razas).get();
+  final razaIds = razaRows.map((r) => r.id).toList();
 
   // ── Dueños ─────────────────────────────────────────────────────────────────
   const duenoData = [

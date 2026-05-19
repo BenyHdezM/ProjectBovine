@@ -55,13 +55,34 @@ class AppDatabase extends _$AppDatabase {
       );
 
   Future<void> _seedData() async {
-    // Lotes predeterminados
     await batch((b) {
       b.insertAll(lotes, [
         const LotesCompanion(clave: Value('R'), descripcion: Value('Reemplazo')),
         const LotesCompanion(clave: Value('O'), descripcion: Value('Ordeña')),
         const LotesCompanion(clave: Value('H'), descripcion: Value('Horras')),
         const LotesCompanion(clave: Value('E'), descripcion: Value('Engorda')),
+      ]);
+      b.insertAll(razas, const [
+        RazasCompanion(nombre: Value('Angus')),
+        RazasCompanion(nombre: Value('Hereford')),
+        RazasCompanion(nombre: Value('Charolais')),
+        RazasCompanion(nombre: Value('Simmental')),
+        RazasCompanion(nombre: Value('Limousin')),
+        RazasCompanion(nombre: Value('Brahman')),
+        RazasCompanion(nombre: Value('Gyr')),
+        RazasCompanion(nombre: Value('Nelore')),
+        RazasCompanion(nombre: Value('Indobrasil')),
+        RazasCompanion(nombre: Value('Pardo Suizo')),
+        RazasCompanion(nombre: Value('Holstein')),
+        RazasCompanion(nombre: Value('Beefmaster')),
+        RazasCompanion(nombre: Value('Brangus')),
+        RazasCompanion(nombre: Value('Simbrah')),
+        RazasCompanion(nombre: Value('Charbray')),
+        RazasCompanion(nombre: Value('Criollo')),
+        RazasCompanion(nombre: Value('Suizo Americano')),
+        RazasCompanion(nombre: Value('Romagnola')),
+        RazasCompanion(nombre: Value('Sardo Negro')),
+        RazasCompanion(nombre: Value('Corriente')),
       ]);
     });
   }
