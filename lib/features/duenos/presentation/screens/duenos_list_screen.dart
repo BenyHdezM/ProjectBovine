@@ -67,33 +67,75 @@ class _DuenosListScreenState extends ConsumerState<DuenosListScreen> {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (duenos) => duenos.isEmpty
             ? const Center(child: Text('No hay dueños registrados.'))
-            : ListView.builder(
-                itemCount: duenos.length,
-                itemBuilder: (context, index) {
-                  final d = duenos[index];
-                  return ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.person)),
-                    title: Text(d.nombre),
-                    subtitle: d.telefono != null ? Text(d.telefono!) : null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Editar',
-                          onPressed: () => context.push('/duenos/${d.id}', extra: d),
+            : LayoutBuilder(
+                builder: (context, constraints) => constraints.maxWidth >= 640
+                    ? SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: DataTable(
+                            headingRowColor: WidgetStateProperty.all(
+                              Theme.of(context).colorScheme.surfaceContainerHighest,
+                            ),
+                            columns: const [
+                              DataColumn(label: Text('Nombre')),
+                              DataColumn(label: Text('Teléfono')),
+                              DataColumn(label: Text('Acciones')),
+                            ],
+                            rows: duenos.map((d) => DataRow(
+                              cells: [
+                                DataCell(Text(d.nombre)),
+                                DataCell(Text(d.telefono ?? '—')),
+                                DataCell(Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined),
+                                      tooltip: 'Editar',
+                                      onPressed: () => context.push('/duenos/${d.id}', extra: d),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline),
+                                      tooltip: 'Eliminar',
+                                      color: Theme.of(context).colorScheme.error,
+                                      onPressed: () => _deleteDueno(d),
+                                    ),
+                                  ],
+                                )),
+                              ],
+                            )).toList(),
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Eliminar',
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () => _deleteDueno(d),
-                        ),
-                      ],
-                    ),
-                    onTap: () => context.push('/duenos/${d.id}', extra: d),
-                  );
-                },
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: duenos.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final d = duenos[index];
+                          return ListTile(
+                            leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                            title: Text(d.nombre),
+                            subtitle: d.telefono != null ? Text(d.telefono!) : null,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined),
+                                  tooltip: 'Editar',
+                                  onPressed: () => context.push('/duenos/${d.id}', extra: d),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  tooltip: 'Eliminar',
+                                  color: Theme.of(context).colorScheme.error,
+                                  onPressed: () => _deleteDueno(d),
+                                ),
+                              ],
+                            ),
+                            onTap: () => context.push('/duenos/${d.id}', extra: d),
+                          );
+                        },
+                      ),
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(

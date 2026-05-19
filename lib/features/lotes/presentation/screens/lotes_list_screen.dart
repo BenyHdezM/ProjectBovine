@@ -67,35 +67,75 @@ class _LotesListScreenState extends ConsumerState<LotesListScreen> {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (lotes) => lotes.isEmpty
             ? const Center(child: Text('No hay lotes registrados.'))
-            : ListView.builder(
-                itemCount: lotes.length,
-                itemBuilder: (context, index) {
-                  final l = lotes[index];
-                  return ListTile(
-                    leading: CircleAvatar(child: Text(l.clave)),
-                    title: Text(l.clave),
-                    subtitle:
-                        l.descripcion != null ? Text(l.descripcion!) : null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined),
-                          tooltip: 'Editar',
-                          onPressed: () =>
-                              context.push('/lotes/${l.id}', extra: l),
+            : LayoutBuilder(
+                builder: (context, constraints) => constraints.maxWidth >= 640
+                    ? SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: DataTable(
+                            headingRowColor: WidgetStateProperty.all(
+                              Theme.of(context).colorScheme.surfaceContainerHighest,
+                            ),
+                            columns: const [
+                              DataColumn(label: Text('Clave')),
+                              DataColumn(label: Text('Descripción')),
+                              DataColumn(label: Text('Acciones')),
+                            ],
+                            rows: lotes.map((l) => DataRow(
+                              cells: [
+                                DataCell(Text(l.clave)),
+                                DataCell(Text(l.descripcion ?? '—')),
+                                DataCell(Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined),
+                                      tooltip: 'Editar',
+                                      onPressed: () => context.push('/lotes/${l.id}', extra: l),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete_outline),
+                                      tooltip: 'Eliminar',
+                                      color: Theme.of(context).colorScheme.error,
+                                      onPressed: () => _deleteLote(l),
+                                    ),
+                                  ],
+                                )),
+                              ],
+                            )).toList(),
+                          ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Eliminar',
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () => _deleteLote(l),
-                        ),
-                      ],
-                    ),
-                    onTap: () => context.push('/lotes/${l.id}', extra: l),
-                  );
-                },
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: lotes.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final l = lotes[index];
+                          return ListTile(
+                            leading: CircleAvatar(child: Text(l.clave)),
+                            title: Text(l.clave),
+                            subtitle: l.descripcion != null ? Text(l.descripcion!) : null,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined),
+                                  tooltip: 'Editar',
+                                  onPressed: () => context.push('/lotes/${l.id}', extra: l),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline),
+                                  tooltip: 'Eliminar',
+                                  color: Theme.of(context).colorScheme.error,
+                                  onPressed: () => _deleteLote(l),
+                                ),
+                              ],
+                            ),
+                            onTap: () => context.push('/lotes/${l.id}', extra: l),
+                          );
+                        },
+                      ),
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(

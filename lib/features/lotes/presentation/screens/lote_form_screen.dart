@@ -125,76 +125,77 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _claveCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Clave *',
-                    prefixIcon: Icon(Icons.label_outline),
-                    helperText: 'Codigo corto del lote (ej. R, O, H, E)',
-                  ),
-                  textCapitalization: TextCapitalization.characters,
-                  maxLength: 10,
-                  inputFormatters: [NoAccentFormatter()],
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Campo requerido'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descripcionCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Descripción',
-                    prefixIcon: Icon(Icons.description_outlined),
-                  ),
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: isLoading ? null : _submit,
-                        icon: isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(isLoading
-                            ? 'Guardando…'
-                            : _esEdicion
-                                ? 'Guardar cambios'
-                                : 'Registrar Lote'),
-                      ),
+        child: Center(
+          child: Form(
+            key: _formKey,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _claveCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Clave *',
+                      prefixIcon: Icon(Icons.label_outline),
+                      helperText: 'Codigo corto del lote (ej. R, O, H, E)',
                     ),
-                    if (_esEdicion) ...[
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: isLoading
-                            ? null
-                            : () => _deleteLote(widget.lote!.id),
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Eliminar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                    textCapitalization: TextCapitalization.characters,
+                    maxLength: 10,
+                    inputFormatters: [NoAccentFormatter()],
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Campo requerido'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _descripcionCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción',
+                      prefixIcon: Icon(Icons.description_outlined),
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: isLoading ? null : _submit,
+                          icon: isLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.save_outlined),
+                          label: Text(isLoading
+                              ? 'Guardando…'
+                              : _esEdicion
+                                  ? 'Guardar cambios'
+                                  : 'Registrar Lote'),
                         ),
                       ),
+                      if (_esEdicion) ...[
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () => _deleteLote(widget.lote!.id),
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Eliminar'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.error,
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

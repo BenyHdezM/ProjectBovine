@@ -126,72 +126,74 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _nombreCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre *',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                  inputFormatters: [NoAccentFormatter()],
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _telefonoCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefono',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: isLoading ? null : _submit,
-                        icon: isLoading
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.save_outlined),
-                        label: Text(isLoading
-                            ? 'Guardando…'
-                            : _esEdicion
-                                ? 'Guardar cambios'
-                                : 'Registrar Dueño'),
-                      ),
+        child: Center(
+          child: Form(
+            key: _formKey,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _nombreCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre *',
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
-                    if (_esEdicion) ...[
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: isLoading
-                            ? null
-                            : () => _deleteDueno(widget.dueno!.id),
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Eliminar'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                    textCapitalization: TextCapitalization.words,
+                    inputFormatters: [NoAccentFormatter()],
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _telefonoCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Telefono',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: isLoading ? null : _submit,
+                          icon: isLoading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.save_outlined),
+                          label: Text(isLoading
+                              ? 'Guardando…'
+                              : _esEdicion
+                                  ? 'Guardar cambios'
+                                  : 'Registrar Dueño'),
                         ),
                       ),
+                      if (_esEdicion) ...[
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () => _deleteDueno(widget.dueno!.id),
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Eliminar'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.error,
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
