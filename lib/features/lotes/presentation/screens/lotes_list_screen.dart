@@ -5,20 +5,21 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/database_provider.dart';
 import '../../../bovinos/presentation/providers/bovinos_providers.dart';
 
-class DuenosListScreen extends ConsumerStatefulWidget {
-  const DuenosListScreen({super.key});
+class LotesListScreen extends ConsumerStatefulWidget {
+  const LotesListScreen({super.key});
 
   @override
-  ConsumerState<DuenosListScreen> createState() => _DuenosListScreenState();
+  ConsumerState<LotesListScreen> createState() => _LotesListScreenState();
 }
 
-class _DuenosListScreenState extends ConsumerState<DuenosListScreen> {
-  Future<void> _deleteDueno(Dueno dueno) async {
+class _LotesListScreenState extends ConsumerState<LotesListScreen> {
+  Future<void> _deleteLote(Lote lote) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Dueño'),
-        content: Text('¿Borrar a "${dueno.nombre}"? Se eliminarán también las relaciones con los bovinos.'),
+        title: const Text('Eliminar Lote'),
+        content: Text(
+            '¿Borrar el lote "${lote.clave}"? Los bovinos asignados quedarán sin lote.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -39,11 +40,10 @@ class _DuenosListScreenState extends ConsumerState<DuenosListScreen> {
     if (confirm == true && mounted) {
       final messenger = ScaffoldMessenger.of(context);
       try {
-        final db = ref.read(appDatabaseProvider);
-        await db.duenosDao.deleteDuenoClean(dueno.id);
+        await ref.read(appDatabaseProvider).bovinosDao.deleteLoteClean(lote.id);
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(content: Text('Borrado "${dueno.nombre}"')),
+            SnackBar(content: Text('Lote "${lote.clave}" eliminado')),
           );
         }
       } catch (e) {
@@ -58,15 +58,15 @@ class _DuenosListScreenState extends ConsumerState<DuenosListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final duenosAsync = ref.watch(duenosListProvider);
+    final lotesAsync = ref.watch(lotesListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dueños')),
-      body: duenosAsync.when(
+      appBar: AppBar(title: const Text('Lotes')),
+      body: lotesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
-        data: (duenos) => duenos.isEmpty
-            ? const Center(child: Text('No hay dueños registrados.'))
+        data: (lotes) => lotes.isEmpty
+            ? const Center(child: Text('No hay lotes registrados.'))
             : LayoutBuilder(
                 builder: (context, constraints) => constraints.maxWidth >= 640
                     ? SingleChildScrollView(
@@ -77,27 +77,27 @@ class _DuenosListScreenState extends ConsumerState<DuenosListScreen> {
                               Theme.of(context).colorScheme.surfaceContainerHighest,
                             ),
                             columns: const [
-                              DataColumn(label: Text('Nombre')),
-                              DataColumn(label: Text('Teléfono')),
+                              DataColumn(label: Text('Clave')),
+                              DataColumn(label: Text('Descripción')),
                               DataColumn(label: Text('Acciones')),
                             ],
-                            rows: duenos.map((d) => DataRow(
+                            rows: lotes.map((l) => DataRow(
                               cells: [
-                                DataCell(Text(d.nombre)),
-                                DataCell(Text(d.telefono ?? '—')),
+                                DataCell(Text(l.clave)),
+                                DataCell(Text(l.descripcion ?? '—')),
                                 DataCell(Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined),
                                       tooltip: 'Editar',
-                                      onPressed: () => context.push('/duenos/${d.id}', extra: d),
+                                      onPressed: () => context.push('/lotes/${l.id}', extra: l),
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete_outline),
                                       tooltip: 'Eliminar',
                                       color: Theme.of(context).colorScheme.error,
-                                      onPressed: () => _deleteDueno(d),
+                                      onPressed: () => _deleteLote(l),
                                     ),
                                   ],
                                 )),
@@ -108,40 +108,40 @@ class _DuenosListScreenState extends ConsumerState<DuenosListScreen> {
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: duenos.length,
+                        itemCount: lotes.length,
                         separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, index) {
-                          final d = duenos[index];
+                          final l = lotes[index];
                           return ListTile(
-                            leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-                            title: Text(d.nombre),
-                            subtitle: d.telefono != null ? Text(d.telefono!) : null,
+                            leading: CircleAvatar(child: Text(l.clave)),
+                            title: Text(l.clave),
+                            subtitle: l.descripcion != null ? Text(l.descripcion!) : null,
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.edit_outlined),
                                   tooltip: 'Editar',
-                                  onPressed: () => context.push('/duenos/${d.id}', extra: d),
+                                  onPressed: () => context.push('/lotes/${l.id}', extra: l),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline),
                                   tooltip: 'Eliminar',
                                   color: Theme.of(context).colorScheme.error,
-                                  onPressed: () => _deleteDueno(d),
+                                  onPressed: () => _deleteLote(l),
                                 ),
                               ],
                             ),
-                            onTap: () => context.push('/duenos/${d.id}', extra: d),
+                            onTap: () => context.push('/lotes/${l.id}', extra: l),
                           );
                         },
                       ),
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/duenos/new'),
-        icon: const Icon(Icons.person_add_outlined),
-        label: const Text('Nuevo Dueño'),
+        onPressed: () => context.push('/lotes/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('Nuevo Lote'),
       ),
     );
   }

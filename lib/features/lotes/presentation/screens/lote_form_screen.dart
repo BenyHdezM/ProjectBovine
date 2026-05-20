@@ -5,46 +5,46 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/providers/database_provider.dart';
 import '../../../../core/utils/text_formatters.dart';
-import '../providers/duenos_providers.dart';
+import '../providers/lotes_providers.dart';
 
-class DuenoFormScreen extends ConsumerStatefulWidget {
-  final Dueno? dueno;
+class LoteFormScreen extends ConsumerStatefulWidget {
+  final Lote? lote;
 
-  const DuenoFormScreen({super.key, this.dueno});
+  const LoteFormScreen({super.key, this.lote});
 
   @override
-  ConsumerState<DuenoFormScreen> createState() => _DuenoFormScreenState();
+  ConsumerState<LoteFormScreen> createState() => _LoteFormScreenState();
 }
 
-class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
+class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nombreCtrl;
-  late final TextEditingController _telefonoCtrl;
+  late final TextEditingController _claveCtrl;
+  late final TextEditingController _descripcionCtrl;
 
-  bool get _esEdicion => widget.dueno != null;
+  bool get _esEdicion => widget.lote != null;
 
   @override
   void initState() {
     super.initState();
-    _nombreCtrl = TextEditingController(text: widget.dueno?.nombre ?? '');
-    _telefonoCtrl =
-        TextEditingController(text: widget.dueno?.telefono ?? '');
+    _claveCtrl = TextEditingController(text: widget.lote?.clave ?? '');
+    _descripcionCtrl =
+        TextEditingController(text: widget.lote?.descripcion ?? '');
   }
 
   @override
   void dispose() {
-    _nombreCtrl.dispose();
-    _telefonoCtrl.dispose();
+    _claveCtrl.dispose();
+    _descripcionCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _deleteDueno(int id) async {
+  Future<void> _deleteLote(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Eliminar Dueño'),
+        title: const Text('Eliminar Lote'),
         content: const Text(
-            '¿Estás seguro de eliminar este dueño? Se borrarán las relaciones con los bovinos.'),
+            '¿Estás seguro de eliminar este lote? Los bovinos asignados quedarán sin lote.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -65,19 +65,16 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
     if (confirm == true && mounted) {
       final messenger = ScaffoldMessenger.of(context);
       try {
-        final db = ref.read(appDatabaseProvider);
-        await db.duenosDao.deleteDuenoClean(id);
+        await ref.read(appDatabaseProvider).bovinosDao.deleteLoteClean(id);
         if (mounted) {
           context.pop();
           messenger.showSnackBar(
-            const SnackBar(content: Text('Dueño eliminado')),
-          );
+              const SnackBar(content: Text('Lote eliminado')));
         }
       } catch (e) {
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
+              SnackBar(content: Text('Error al eliminar: $e')));
         }
       }
     }
@@ -86,16 +83,18 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final companion = DuenosCompanion(
-      nombre: Value(_nombreCtrl.text.trim()),
-      telefono: Value(
-        _telefonoCtrl.text.trim().isEmpty ? null : _telefonoCtrl.text.trim(),
+    final companion = LotesCompanion(
+      clave: Value(_claveCtrl.text.trim().toUpperCase()),
+      descripcion: Value(
+        _descripcionCtrl.text.trim().isEmpty
+            ? null
+            : _descripcionCtrl.text.trim(),
       ),
     );
 
     final error = await ref
-        .read(duenoFormProvider.notifier)
-        .save(dueno: companion, editId: widget.dueno?.id);
+        .read(loteFormProvider.notifier)
+        .save(lote: companion, editId: widget.lote?.id);
 
     if (!mounted) return;
     if (error != null) {
@@ -108,18 +107,18 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(duenoFormProvider).isLoading;
+    final isLoading = ref.watch(loteFormProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_esEdicion ? 'Editar Dueño' : 'Nuevo Dueño'),
+        title: Text(_esEdicion ? 'Editar Lote' : 'Nuevo Lote'),
         actions: _esEdicion
             ? [
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Eliminar',
                   color: Theme.of(context).colorScheme.error,
-                  onPressed: () => _deleteDueno(widget.dueno!.id),
+                  onPressed: () => _deleteLote(widget.lote!.id),
                 ),
               ]
             : null,
@@ -135,24 +134,27 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TextFormField(
-                    controller: _nombreCtrl,
+                    controller: _claveCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Nombre *',
-                      prefixIcon: Icon(Icons.person_outline),
+                      labelText: 'Clave *',
+                      prefixIcon: Icon(Icons.label_outline),
+                      helperText: 'Codigo corto del lote (ej. R, O, H, E)',
                     ),
-                    textCapitalization: TextCapitalization.words,
+                    textCapitalization: TextCapitalization.characters,
+                    maxLength: 10,
                     inputFormatters: [NoAccentFormatter()],
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Campo requerido'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _telefonoCtrl,
+                    controller: _descripcionCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Telefono',
-                      prefixIcon: Icon(Icons.phone_outlined),
+                      labelText: 'Descripción',
+                      prefixIcon: Icon(Icons.description_outlined),
                     ),
-                    keyboardType: TextInputType.phone,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -171,7 +173,7 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
                               ? 'Guardando…'
                               : _esEdicion
                                   ? 'Guardar cambios'
-                                  : 'Registrar Dueño'),
+                                  : 'Registrar Lote'),
                         ),
                       ),
                       if (_esEdicion) ...[
@@ -179,7 +181,7 @@ class _DuenoFormScreenState extends ConsumerState<DuenoFormScreen> {
                         OutlinedButton.icon(
                           onPressed: isLoading
                               ? null
-                              : () => _deleteDueno(widget.dueno!.id),
+                              : () => _deleteLote(widget.lote!.id),
                           icon: const Icon(Icons.delete_outline),
                           label: const Text('Eliminar'),
                           style: OutlinedButton.styleFrom(

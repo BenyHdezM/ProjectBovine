@@ -2,15 +2,23 @@ import 'package:drift/drift.dart';
 import '../app_database.dart';
 import '../tables/bovinos_table.dart';
 import '../tables/duenos_table.dart';
+import '../tables/fotos_table.dart';
 import '../tables/lotes_table.dart';
+import '../tables/partos_table.dart';
 import '../tables/pertenencia_table.dart';
+import '../tables/progenie_table.dart';
 import '../tables/razas_table.dart';
+import '../tables/registro_reproductivo_table.dart';
+import '../tables/toros_table.dart';
+import '../tables/tratamientos_table.dart';
+import '../tables/vacunas_table.dart';
 import '../tables/ventas_table.dart';
 import '../models/bovino_with_dueno.dart';
 
 part 'bovinos_dao.g.dart';
 
-@DriftAccessor(tables: [Bovinos, Pertenencia, Duenos, Razas, Lotes, Ventas])
+@DriftAccessor(
+    tables: [Bovinos, Pertenencia, Duenos, Razas, Lotes, Ventas, Vacunas, Tratamientos, Partos, Toros, Progenie, RegistroReproductivo, Fotos])
 class BovinosDao extends DatabaseAccessor<AppDatabase>
     with _$BovinosDaoMixin {
   BovinosDao(super.db);
@@ -56,6 +64,16 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
   Future<List<Lote>> getAllLotes() => select(db.lotes).get();
   Stream<List<Lote>> watchAllLotes() => select(db.lotes).watch();
 
+  Future<int> insertLote(LotesCompanion lote) => into(db.lotes).insert(lote);
+
+  Future<bool> updateLote(LotesCompanion lote) => update(db.lotes).replace(lote);
+
+  Future<void> deleteLoteClean(int id) => transaction(() async {
+        await (update(db.bovinos)..where((b) => b.loteId.equals(id)))
+            .write(const BovinosCompanion(loteId: Value(null)));
+        await (delete(db.lotes)..where((l) => l.id.equals(id))).go();
+      });
+
   /// Inserta un bovino y opcionalmente le asigna un dueño en una transacción.
   Future<int> insertBovinoWithDueno(
     BovinosCompanion bovino, {
@@ -80,6 +98,42 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteBovino(int id) =>
       (delete(db.bovinos)..where((b) => b.id.equals(id))).go();
+
+  /// Elimina un bovino y todos sus registros relacionados.
+  Future<void> deleteBovinoWithChildren(int id) async {
+    await transaction(() async {
+      // Tablas hijas directas de Bovinos
+      await (delete(db.vacunas)..where((v) => v.bovinoId.equals(id))).go();
+      await (delete(db.tratamientos)..where((t) => t.bovinoId.equals(id))).go();
+      await (delete(db.partos)..where((p) => p.bovinoId.equals(id))).go();
+      await (delete(db.fotos)..where((f) => f.bovinoId.equals(id))).go();
+      await (delete(db.ventas)..where((v) => v.bovinoId.equals(id))).go();
+
+      // Registro reproductivo (bovinoId)
+      await (delete(db.registroReproductivo)
+            ..where((r) => r.bovinoId.equals(id)))
+          .go();
+
+      // Toros (bovinoId)
+      await (delete(db.toros)..where((t) => t.bovinoId.equals(id))).go();
+
+      // Progenie como hijo
+      await (delete(db.progenie)..where((p) => p.bovinoId.equals(id))).go();
+
+      // Progenie como padre/madre
+      await (delete(db.progenie)
+            ..where((p) =>
+                p.bovinoPadreId.equals(id) | p.bovinaMadreId.equals(id)))
+          .go();
+
+      // Pertenencia
+      await (delete(db.pertenencia)
+            ..where((p) => p.bovinoId.equals(id))).go();
+
+      // Finalmente el bovino
+      await (db.delete(db.bovinos)..where((b) => b.id.equals(id))).go();
+    });
+  }
 
   /// Inserta o actualiza el registro de venta para un bovino.
   Future<void> upsertVenta(int bovinoId, DateTime fechaVenta) async {
@@ -116,4 +170,82 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
           ),
         );
       });
+
+  // ── Partos ────────────────────────────────────────────────────────────────
+
+  Stream<List<Parto>> watchPartosByBovinoId(int bovinoId) =>
+      (select(db.partos)
+            ..where((p) => p.bovinoId.equals(bovinoId))
+            ..orderBy([(p) => OrderingTerm.desc(p.fechaParto)]))
+          .watch();
+
+  Future<int> insertParto(PartosCompanion parto) =>
+      into(db.partos).insert(parto);
+
+  Future<bool> updateParto(PartosCompanion parto) =>
+      update(db.partos).replace(parto);
+
+  Future<int> deleteParto(int id) =>
+      (delete(db.partos)..where((p) => p.id.equals(id))).go();
+
+  // ── Progenie ──────────────────────────────────────────────────────────────
+
+  Future<ProgenieData?> getProgenieByBovinoId(int bovinoId) =>
+      (select(db.progenie)..where((p) => p.bovinoId.equals(bovinoId)))
+          .getSingleOrNull();
+
+  Future<void> upsertProgenie(
+    int bovinoId, {
+    int? madreId,
+    int? padreId,
+  }) async {
+    if (madreId == null && padreId == null) {
+      await (delete(db.progenie)..where((p) => p.bovinoId.equals(bovinoId)))
+          .go();
+      return;
+    }
+    final companion = ProgenieCompanion(
+      bovinoId: Value(bovinoId),
+      bovinaMadreId: Value(madreId),
+      bovinoPadreId: Value(padreId),
+    );
+    await into(db.progenie).insert(
+      companion,
+      onConflict: DoUpdate((_) => companion, target: [db.progenie.bovinoId]),
+    );
+  }
+
+  // ── Registro Reproductivo ─────────────────────────────────────────────────
+
+  Stream<List<RegistroReproductivoData>> watchRegistrosByBovinoId(
+          int bovinoId) =>
+      (select(db.registroReproductivo)
+            ..where((r) => r.bovinoId.equals(bovinoId))
+            ..orderBy([(r) => OrderingTerm.desc(r.fecha)]))
+          .watch();
+
+  Future<int> insertRegistro(RegistroReproductivoCompanion registro) =>
+      into(db.registroReproductivo).insert(registro);
+
+  Future<bool> updateRegistro(RegistroReproductivoCompanion registro) =>
+      update(db.registroReproductivo).replace(registro);
+
+  Future<int> deleteRegistro(int id) =>
+      (delete(db.registroReproductivo)..where((r) => r.id.equals(id))).go();
+
+  // ── Toros ─────────────────────────────────────────────────────────────────
+
+  Stream<List<Toro>> watchAllTorosStream() => select(db.toros).watch();
+
+  Stream<Toro?> watchToroByBovinoId(int bovinoId) =>
+      (select(db.toros)..where((t) => t.bovinoId.equals(bovinoId)))
+          .watchSingleOrNull();
+
+  Future<int> insertToro(int bovinoId) => into(db.toros).insert(
+        TorosCompanion(bovinoId: Value(bovinoId)),
+        onConflict: DoNothing(),
+      );
+
+  Future<int> deleteToro(int bovinoId) =>
+      (delete(db.toros)..where((t) => t.bovinoId.equals(bovinoId))).go();
 }

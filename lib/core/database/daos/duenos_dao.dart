@@ -28,4 +28,12 @@ class DuenosDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteDueno(int id) =>
       (delete(db.duenos)..where((d) => d.id.equals(id))).go();
+
+  /// Elimina un dueño y sus referencias en Pertenencia.
+  Future<void> deleteDuenoClean(int id) async {
+    await (delete(db.pertenencia)
+          ..where((p) => p.duenoId.equals(id)))
+        .go();
+    await (delete(db.duenos)..where((d) => d.id.equals(id))).go();
+  }
 }
