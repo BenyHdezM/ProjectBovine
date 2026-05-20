@@ -385,13 +385,11 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 TextFormField(
                   controller: _numRegistroCtrl,
                   decoration: const InputDecoration(
-                    labelText: 'Núm. Registro *',
+                    labelText: 'Número de Control',
                     prefixIcon: Icon(Icons.numbers_outlined),
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Campo requerido' : null,
                 ),
                 const SizedBox(height: 16),
 

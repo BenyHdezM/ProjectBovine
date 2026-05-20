@@ -156,7 +156,7 @@ class _MobileLayout extends StatelessWidget {
                       if (b.numRegistro != null)
                         _InfoRow(
                             icon: Icons.numbers_outlined,
-                            label: 'Núm. Registro',
+                            label: 'Número de Control',
                             value: b.numRegistro!),
                       if (b.nombre != null)
                         _InfoRow(
@@ -363,7 +363,7 @@ class _DesktopLayout extends StatelessWidget {
                 if (b.numRegistro != null)
                   _SidebarInfo(
                       icon: Icons.numbers_outlined,
-                      label: 'Núm. Registro',
+                      label: 'Número de Control',
                       value: b.numRegistro!),
                 if (b.fechaNacimiento != null)
                   _SidebarInfo(

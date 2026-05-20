@@ -387,7 +387,7 @@ class _Filtros extends StatelessWidget {
                         label: sortCampo == null
                             ? 'Ordenar'
                             : '${switch (sortCampo!) {
-                                _SortCampo.numRegistro => 'Núm. Reg.',
+                                _SortCampo.numRegistro => 'Núm. Ctrl.',
                                 _SortCampo.arete => 'Arete',
                                 _SortCampo.nombre => 'Nombre',
                                 _SortCampo.dueno => 'Dueño',
@@ -596,7 +596,7 @@ void _mostrarOrdenarPor(
               ),
               items: const [
                 DropdownMenuItem(value: null, child: Text('Sin orden')),
-                DropdownMenuItem(value: _SortCampo.numRegistro, child: Text('Núm. Registro')),
+                DropdownMenuItem(value: _SortCampo.numRegistro, child: Text('Número de Control')),
                 DropdownMenuItem(value: _SortCampo.arete, child: Text('Arete')),
                 DropdownMenuItem(value: _SortCampo.nombre, child: Text('Nombre')),
                 DropdownMenuItem(value: _SortCampo.dueno, child: Text('Dueño')),
@@ -960,7 +960,7 @@ class _BovinosDataTable extends StatelessWidget {
               ),
           columns: [
             DataColumn(label: const Text('Arete'), onSort: onSort),
-            DataColumn(label: const Text('Núm. Reg.'), onSort: onSort),
+            DataColumn(label: const Text('Núm. Ctrl.'), onSort: onSort),
             DataColumn(label: const Text('Nombre'), onSort: onSort),
             DataColumn(label: const Text('Dueño'), onSort: onSort),
             const DataColumn(label: Text('Sexo')),
@@ -1078,7 +1078,7 @@ class _BovinosListView extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600)),
           subtitle: Text(
             [
-              if (item.bovino.numRegistro != null) 'Reg. ${item.bovino.numRegistro!}',
+              if (item.bovino.numRegistro != null) 'Ctrl. ${item.bovino.numRegistro!}',
               if (item.bovino.nombre != null) item.bovino.nombre!,
               if (item.dueno != null) item.dueno!.nombre,
               if (_calcularEdad(item.bovino.fechaNacimiento) != null)

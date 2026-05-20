@@ -103,7 +103,7 @@ class AppDatabase extends _$AppDatabase {
         RazasCompanion(nombre: Value('Suizo Americano')),
         RazasCompanion(nombre: Value('Romagnola')),
         RazasCompanion(nombre: Value('Sardo Negro')),
-        RazasCompanion(nombre: Value('Corriente')),
+        RazasCompanion(nombre: Value('Cruza')),
       ]);
     });
   }
