@@ -59,7 +59,8 @@ class BovinosDao extends DatabaseAccessor<AppDatabase>
           .getSingleOrNull();
 
   Future<List<Raza>> getAllRazas() => select(db.razas).get();
-  Stream<List<Raza>> watchAllRazas() => select(db.razas).watch();
+  Stream<List<Raza>> watchAllRazas() =>
+      (select(db.razas)..orderBy([(r) => OrderingTerm.asc(r.nombre)])).watch();
 
   Future<List<Lote>> getAllLotes() => select(db.lotes).get();
   Stream<List<Lote>> watchAllLotes() => select(db.lotes).watch();
