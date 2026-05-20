@@ -261,15 +261,13 @@ class _MobileLayout extends StatelessWidget {
                         icon: Icons.calendar_today_outlined,
                         label: 'Registrado',
                         value: fmt.format(b.createdAt),
-                        last: b.updatedAt == b.createdAt,
                       ),
-                      if (b.updatedAt != b.createdAt)
-                        _InfoRow(
-                          icon: Icons.update_outlined,
-                          label: 'Última actualización',
-                          value: fmt.format(b.updatedAt),
-                          last: true,
-                        ),
+                      _InfoRow(
+                        icon: Icons.update_outlined,
+                        label: 'Última modificación',
+                        value: fmt.format(b.updatedAt),
+                        last: true,
+                      ),
                     ],
                   ),
                 ),
@@ -493,15 +491,13 @@ class _DesktopLayout extends StatelessWidget {
                           icon: Icons.calendar_today_outlined,
                           label: 'Registrado',
                           value: fmt.format(b.createdAt),
-                          last: b.updatedAt == b.createdAt,
                         ),
-                        if (b.updatedAt != b.createdAt)
-                          _InfoRow(
-                            icon: Icons.update_outlined,
-                            label: 'Última actualización',
-                            value: fmt.format(b.updatedAt),
-                            last: true,
-                          ),
+                        _InfoRow(
+                          icon: Icons.update_outlined,
+                          label: 'Última modificación',
+                          value: fmt.format(b.updatedAt),
+                          last: true,
+                        ),
                       ],
                     ),
                   ),
