@@ -5,7 +5,7 @@ import 'razas_table.dart';
 class Bovinos extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get areteId => text().unique()();
-  TextColumn get numRegistro => text().nullable()();
+  TextColumn get numControl => text().nullable()();
   // nullable; la unicidad se maneja con uniqueKeys para permitir múltiples NULLs
   TextColumn get nombre => text().nullable()();
   // M = Macho, H = Hembra

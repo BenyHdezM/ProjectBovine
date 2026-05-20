@@ -27,7 +27,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   final _picker = ImagePicker();
 
   late final TextEditingController _areteCtrl;
-  late final TextEditingController _numRegistroCtrl;
+  late final TextEditingController _numControlCtrl;
   late final TextEditingController _nombreCtrl;
   late final TextEditingController _uppCtrl;
 
@@ -55,7 +55,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
     super.initState();
     final b = widget.bovino;
     _areteCtrl = TextEditingController(text: b?.areteId ?? '');
-    _numRegistroCtrl = TextEditingController(text: b?.numRegistro ?? '');
+    _numControlCtrl = TextEditingController(text: b?.numControl ?? '');
     _nombreCtrl = TextEditingController(text: b?.nombre ?? '');
     _uppCtrl = TextEditingController(text: b?.upp ?? '');
     if (b != null) {
@@ -72,7 +72,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
   @override
   void dispose() {
     _areteCtrl.dispose();
-    _numRegistroCtrl.dispose();
+    _numControlCtrl.dispose();
     _nombreCtrl.dispose();
     _uppCtrl.dispose();
     super.dispose();
@@ -228,9 +228,9 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
 
     final companion = BovinosCompanion(
       areteId: Value(_areteCtrl.text.trim()),
-      numRegistro: Value(_numRegistroCtrl.text.trim().isEmpty
+      numControl: Value(_numControlCtrl.text.trim().isEmpty
           ? null
-          : _numRegistroCtrl.text.trim()),
+          : _numControlCtrl.text.trim()),
       nombre: Value(_nombreCtrl.text.trim().isEmpty
           ? null
           : _nombreCtrl.text.trim()),
@@ -383,7 +383,7 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
 
                 // ── Núm. Registro ────────────────────────────────────────────
                 TextFormField(
-                  controller: _numRegistroCtrl,
+                  controller: _numControlCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Número de Control',
                     prefixIcon: Icon(Icons.numbers_outlined),
@@ -797,7 +797,7 @@ String? _getBovinoLabel(int? id, List<BovinoWithDueno> list) {
   if (item == null) return null;
   final b = item.bovino;
   final identifier =
-      b.areteId.isNotEmpty ? b.areteId : b.numRegistro ?? '';
+      b.areteId.isNotEmpty ? b.areteId : b.numControl ?? '';
   if (b.nombre != null && b.nombre!.isNotEmpty) {
     return identifier.isNotEmpty ? '${b.nombre} — $identifier' : b.nombre!;
   }
@@ -877,7 +877,7 @@ class _BovinoSearchSheetState extends State<_BovinoSearchSheet> {
               final b = item.bovino;
               return b.areteId.toLowerCase().contains(q) ||
                   (b.nombre?.toLowerCase().contains(q) ?? false) ||
-                  (b.numRegistro?.toLowerCase().contains(q) ?? false);
+                  (b.numControl?.toLowerCase().contains(q) ?? false);
             }).toList();
     });
   }

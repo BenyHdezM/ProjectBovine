@@ -153,11 +153,11 @@ class _MobileLayout extends StatelessWidget {
                             icon: Icons.tag,
                             label: 'Arete ID',
                             value: b.areteId),
-                      if (b.numRegistro != null)
+                      if (b.numControl != null)
                         _InfoRow(
                             icon: Icons.numbers_outlined,
                             label: 'Número de Control',
-                            value: b.numRegistro!),
+                            value: b.numControl!),
                       if (b.nombre != null)
                         _InfoRow(
                             icon: Icons.pets,
@@ -360,11 +360,11 @@ class _DesktopLayout extends StatelessWidget {
                       icon: Icons.tag,
                       label: 'Arete ID',
                       value: b.areteId),
-                if (b.numRegistro != null)
+                if (b.numControl != null)
                   _SidebarInfo(
                       icon: Icons.numbers_outlined,
                       label: 'Número de Control',
-                      value: b.numRegistro!),
+                      value: b.numControl!),
                 if (b.fechaNacimiento != null)
                   _SidebarInfo(
                       icon: Icons.cake_outlined,

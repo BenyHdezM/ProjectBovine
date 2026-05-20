@@ -3,7 +3,7 @@ import '../app_database.dart';
 
 typedef _BovinoRow = (
   String arete,
-  String numRegistro,
+  String numControl,
   String? nombre,
   String sexo,
   String estado,
@@ -94,7 +94,7 @@ Future<void> seedTestData(AppDatabase db) async {
   // ── Bovinos ───────────────────────────────────────────────────────────────
   await db.transaction(() async {
     var i = 0;
-    for (final (arete, numRegistro, nombre, sexo, estado, anio, mes, dia, duenoIdx, razaIdx)
+    for (final (arete, numControl, nombre, sexo, estado, anio, mes, dia, duenoIdx, razaIdx)
         in _datos) {
       final existe = await (db.select(db.bovinos)
             ..where((b) => b.areteId.equals(arete)))
@@ -113,7 +113,7 @@ Future<void> seedTestData(AppDatabase db) async {
       final bovinoId = await db.into(db.bovinos).insert(
         BovinosCompanion(
           areteId: Value(arete),
-          numRegistro: Value(numRegistro),
+          numControl: Value(numControl),
           nombre: Value(nombre),
           sexo: Value(sexo),
           estado: Value(estado),

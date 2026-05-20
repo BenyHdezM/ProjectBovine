@@ -69,7 +69,7 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('PRAGMA foreign_keys = ON');
           }
           if (from < 3) {
-            await m.addColumn(bovinos, bovinos.numRegistro);
+            await m.addColumn(bovinos, bovinos.numControl);
           }
         },
       );

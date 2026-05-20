@@ -690,11 +690,11 @@ class $BovinosTable extends Bovinos with TableInfo<$BovinosTable, Bovino> {
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
-  static const VerificationMeta _numRegistroMeta =
-      const VerificationMeta('numRegistro');
+  static const VerificationMeta _numControlMeta =
+      const VerificationMeta('numControl');
   @override
-  late final GeneratedColumn<String> numRegistro = GeneratedColumn<String>(
-      'num_registro', aliasedName, true,
+  late final GeneratedColumn<String> numControl = GeneratedColumn<String>(
+      'num_control', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _nombreMeta = const VerificationMeta('nombre');
   @override
@@ -770,7 +770,7 @@ class $BovinosTable extends Bovinos with TableInfo<$BovinosTable, Bovino> {
   List<GeneratedColumn> get $columns => [
         id,
         areteId,
-        numRegistro,
+        numControl,
         nombre,
         sexo,
         fechaNacimiento,
@@ -801,11 +801,11 @@ class $BovinosTable extends Bovinos with TableInfo<$BovinosTable, Bovino> {
     } else if (isInserting) {
       context.missing(_areteIdMeta);
     }
-    if (data.containsKey('num_registro')) {
+    if (data.containsKey('num_control')) {
       context.handle(
-          _numRegistroMeta,
-          numRegistro.isAcceptableOrUnknown(
-              data['num_registro']!, _numRegistroMeta));
+          _numControlMeta,
+          numControl.isAcceptableOrUnknown(
+              data['num_control']!, _numControlMeta));
     }
     if (data.containsKey('nombre')) {
       context.handle(_nombreMeta,
@@ -870,8 +870,8 @@ class $BovinosTable extends Bovinos with TableInfo<$BovinosTable, Bovino> {
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       areteId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}arete_id'])!,
-      numRegistro: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}num_registro']),
+      numControl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}num_control']),
       nombre: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}nombre']),
       sexo: attachedDatabase.typeMapping
@@ -904,7 +904,7 @@ class $BovinosTable extends Bovinos with TableInfo<$BovinosTable, Bovino> {
 class Bovino extends DataClass implements Insertable<Bovino> {
   final int id;
   final String areteId;
-  final String? numRegistro;
+  final String? numControl;
   final String? nombre;
   final String sexo;
   final DateTime? fechaNacimiento;
@@ -918,7 +918,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
   const Bovino(
       {required this.id,
       required this.areteId,
-      this.numRegistro,
+      this.numControl,
       this.nombre,
       required this.sexo,
       this.fechaNacimiento,
@@ -934,8 +934,8 @@ class Bovino extends DataClass implements Insertable<Bovino> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['arete_id'] = Variable<String>(areteId);
-    if (!nullToAbsent || numRegistro != null) {
-      map['num_registro'] = Variable<String>(numRegistro);
+    if (!nullToAbsent || numControl != null) {
+      map['num_control'] = Variable<String>(numControl);
     }
     if (!nullToAbsent || nombre != null) {
       map['nombre'] = Variable<String>(nombre);
@@ -966,9 +966,9 @@ class Bovino extends DataClass implements Insertable<Bovino> {
     return BovinosCompanion(
       id: Value(id),
       areteId: Value(areteId),
-      numRegistro: numRegistro == null && nullToAbsent
+      numControl: numControl == null && nullToAbsent
           ? const Value.absent()
-          : Value(numRegistro),
+          : Value(numControl),
       nombre:
           nombre == null && nullToAbsent ? const Value.absent() : Value(nombre),
       sexo: Value(sexo),
@@ -995,7 +995,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
     return Bovino(
       id: serializer.fromJson<int>(json['id']),
       areteId: serializer.fromJson<String>(json['areteId']),
-      numRegistro: serializer.fromJson<String?>(json['numRegistro']),
+      numControl: serializer.fromJson<String?>(json['numControl']),
       nombre: serializer.fromJson<String?>(json['nombre']),
       sexo: serializer.fromJson<String>(json['sexo']),
       fechaNacimiento: serializer.fromJson<DateTime?>(json['fechaNacimiento']),
@@ -1014,7 +1014,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'areteId': serializer.toJson<String>(areteId),
-      'numRegistro': serializer.toJson<String?>(numRegistro),
+      'numControl': serializer.toJson<String?>(numControl),
       'nombre': serializer.toJson<String?>(nombre),
       'sexo': serializer.toJson<String>(sexo),
       'fechaNacimiento': serializer.toJson<DateTime?>(fechaNacimiento),
@@ -1031,7 +1031,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
   Bovino copyWith(
           {int? id,
           String? areteId,
-          Value<String?> numRegistro = const Value.absent(),
+          Value<String?> numControl = const Value.absent(),
           Value<String?> nombre = const Value.absent(),
           String? sexo,
           Value<DateTime?> fechaNacimiento = const Value.absent(),
@@ -1045,7 +1045,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
       Bovino(
         id: id ?? this.id,
         areteId: areteId ?? this.areteId,
-        numRegistro: numRegistro.present ? numRegistro.value : this.numRegistro,
+        numControl: numControl.present ? numControl.value : this.numControl,
         nombre: nombre.present ? nombre.value : this.nombre,
         sexo: sexo ?? this.sexo,
         fechaNacimiento: fechaNacimiento.present
@@ -1063,8 +1063,8 @@ class Bovino extends DataClass implements Insertable<Bovino> {
     return Bovino(
       id: data.id.present ? data.id.value : this.id,
       areteId: data.areteId.present ? data.areteId.value : this.areteId,
-      numRegistro:
-          data.numRegistro.present ? data.numRegistro.value : this.numRegistro,
+      numControl:
+          data.numControl.present ? data.numControl.value : this.numControl,
       nombre: data.nombre.present ? data.nombre.value : this.nombre,
       sexo: data.sexo.present ? data.sexo.value : this.sexo,
       fechaNacimiento: data.fechaNacimiento.present
@@ -1086,7 +1086,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
     return (StringBuffer('Bovino(')
           ..write('id: $id, ')
           ..write('areteId: $areteId, ')
-          ..write('numRegistro: $numRegistro, ')
+          ..write('numControl: $numControl, ')
           ..write('nombre: $nombre, ')
           ..write('sexo: $sexo, ')
           ..write('fechaNacimiento: $fechaNacimiento, ')
@@ -1105,7 +1105,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
   int get hashCode => Object.hash(
       id,
       areteId,
-      numRegistro,
+      numControl,
       nombre,
       sexo,
       fechaNacimiento,
@@ -1122,7 +1122,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
       (other is Bovino &&
           other.id == this.id &&
           other.areteId == this.areteId &&
-          other.numRegistro == this.numRegistro &&
+          other.numControl == this.numControl &&
           other.nombre == this.nombre &&
           other.sexo == this.sexo &&
           other.fechaNacimiento == this.fechaNacimiento &&
@@ -1138,7 +1138,7 @@ class Bovino extends DataClass implements Insertable<Bovino> {
 class BovinosCompanion extends UpdateCompanion<Bovino> {
   final Value<int> id;
   final Value<String> areteId;
-  final Value<String?> numRegistro;
+  final Value<String?> numControl;
   final Value<String?> nombre;
   final Value<String> sexo;
   final Value<DateTime?> fechaNacimiento;
@@ -1152,7 +1152,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
   const BovinosCompanion({
     this.id = const Value.absent(),
     this.areteId = const Value.absent(),
-    this.numRegistro = const Value.absent(),
+    this.numControl = const Value.absent(),
     this.nombre = const Value.absent(),
     this.sexo = const Value.absent(),
     this.fechaNacimiento = const Value.absent(),
@@ -1167,7 +1167,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
   BovinosCompanion.insert({
     this.id = const Value.absent(),
     required String areteId,
-    this.numRegistro = const Value.absent(),
+    this.numControl = const Value.absent(),
     this.nombre = const Value.absent(),
     required String sexo,
     this.fechaNacimiento = const Value.absent(),
@@ -1183,7 +1183,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
   static Insertable<Bovino> custom({
     Expression<int>? id,
     Expression<String>? areteId,
-    Expression<String>? numRegistro,
+    Expression<String>? numControl,
     Expression<String>? nombre,
     Expression<String>? sexo,
     Expression<DateTime>? fechaNacimiento,
@@ -1198,7 +1198,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (areteId != null) 'arete_id': areteId,
-      if (numRegistro != null) 'num_registro': numRegistro,
+      if (numControl != null) 'num_control': numControl,
       if (nombre != null) 'nombre': nombre,
       if (sexo != null) 'sexo': sexo,
       if (fechaNacimiento != null) 'fecha_nacimiento': fechaNacimiento,
@@ -1215,7 +1215,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
   BovinosCompanion copyWith(
       {Value<int>? id,
       Value<String>? areteId,
-      Value<String?>? numRegistro,
+      Value<String?>? numControl,
       Value<String?>? nombre,
       Value<String>? sexo,
       Value<DateTime?>? fechaNacimiento,
@@ -1229,7 +1229,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
     return BovinosCompanion(
       id: id ?? this.id,
       areteId: areteId ?? this.areteId,
-      numRegistro: numRegistro ?? this.numRegistro,
+      numControl: numControl ?? this.numControl,
       nombre: nombre ?? this.nombre,
       sexo: sexo ?? this.sexo,
       fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
@@ -1252,8 +1252,8 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
     if (areteId.present) {
       map['arete_id'] = Variable<String>(areteId.value);
     }
-    if (numRegistro.present) {
-      map['num_registro'] = Variable<String>(numRegistro.value);
+    if (numControl.present) {
+      map['num_control'] = Variable<String>(numControl.value);
     }
     if (nombre.present) {
       map['nombre'] = Variable<String>(nombre.value);
@@ -1293,7 +1293,7 @@ class BovinosCompanion extends UpdateCompanion<Bovino> {
     return (StringBuffer('BovinosCompanion(')
           ..write('id: $id, ')
           ..write('areteId: $areteId, ')
-          ..write('numRegistro: $numRegistro, ')
+          ..write('numControl: $numControl, ')
           ..write('nombre: $nombre, ')
           ..write('sexo: $sexo, ')
           ..write('fechaNacimiento: $fechaNacimiento, ')
@@ -4703,7 +4703,7 @@ typedef $$DuenosTableProcessedTableManager = ProcessedTableManager<
 typedef $$BovinosTableCreateCompanionBuilder = BovinosCompanion Function({
   Value<int> id,
   required String areteId,
-  Value<String?> numRegistro,
+  Value<String?> numControl,
   Value<String?> nombre,
   required String sexo,
   Value<DateTime?> fechaNacimiento,
@@ -4718,7 +4718,7 @@ typedef $$BovinosTableCreateCompanionBuilder = BovinosCompanion Function({
 typedef $$BovinosTableUpdateCompanionBuilder = BovinosCompanion Function({
   Value<int> id,
   Value<String> areteId,
-  Value<String?> numRegistro,
+  Value<String?> numControl,
   Value<String?> nombre,
   Value<String> sexo,
   Value<DateTime?> fechaNacimiento,
@@ -4942,8 +4942,8 @@ class $$BovinosTableFilterComposer
   ColumnFilters<String> get areteId => $composableBuilder(
       column: $table.areteId, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get numRegistro => $composableBuilder(
-      column: $table.numRegistro, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get numControl => $composableBuilder(
+      column: $table.numControl, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get nombre => $composableBuilder(
       column: $table.nombre, builder: (column) => ColumnFilters(column));
@@ -5258,8 +5258,8 @@ class $$BovinosTableOrderingComposer
   ColumnOrderings<String> get areteId => $composableBuilder(
       column: $table.areteId, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get numRegistro => $composableBuilder(
-      column: $table.numRegistro, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get numControl => $composableBuilder(
+      column: $table.numControl, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get nombre => $composableBuilder(
       column: $table.nombre, builder: (column) => ColumnOrderings(column));
@@ -5342,8 +5342,8 @@ class $$BovinosTableAnnotationComposer
   GeneratedColumn<String> get areteId =>
       $composableBuilder(column: $table.areteId, builder: (column) => column);
 
-  GeneratedColumn<String> get numRegistro => $composableBuilder(
-      column: $table.numRegistro, builder: (column) => column);
+  GeneratedColumn<String> get numControl => $composableBuilder(
+      column: $table.numControl, builder: (column) => column);
 
   GeneratedColumn<String> get nombre =>
       $composableBuilder(column: $table.nombre, builder: (column) => column);
@@ -5681,7 +5681,7 @@ class $$BovinosTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<String> areteId = const Value.absent(),
-            Value<String?> numRegistro = const Value.absent(),
+            Value<String?> numControl = const Value.absent(),
             Value<String?> nombre = const Value.absent(),
             Value<String> sexo = const Value.absent(),
             Value<DateTime?> fechaNacimiento = const Value.absent(),
@@ -5696,7 +5696,7 @@ class $$BovinosTableTableManager extends RootTableManager<
               BovinosCompanion(
             id: id,
             areteId: areteId,
-            numRegistro: numRegistro,
+            numControl: numControl,
             nombre: nombre,
             sexo: sexo,
             fechaNacimiento: fechaNacimiento,
@@ -5711,7 +5711,7 @@ class $$BovinosTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required String areteId,
-            Value<String?> numRegistro = const Value.absent(),
+            Value<String?> numControl = const Value.absent(),
             Value<String?> nombre = const Value.absent(),
             required String sexo,
             Value<DateTime?> fechaNacimiento = const Value.absent(),
@@ -5726,7 +5726,7 @@ class $$BovinosTableTableManager extends RootTableManager<
               BovinosCompanion.insert(
             id: id,
             areteId: areteId,
-            numRegistro: numRegistro,
+            numControl: numControl,
             nombre: nombre,
             sexo: sexo,
             fechaNacimiento: fechaNacimiento,
