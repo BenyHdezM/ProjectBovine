@@ -215,13 +215,6 @@ class _BovinosListScreenState extends ConsumerState<BovinosListScreen> {
                           _sortCampo = _colIndexToSortCampo(col);
                           _sortAscending = asc;
                         }),
-                        edadFiltroTipo: _edadFiltroTipo,
-                        edadRango: _edadRango,
-                        edadValor: _edadValor,
-                        onEdadFiltroTipo: (v) =>
-                            setState(() => _edadFiltroTipo = v),
-                        onEdadRango: (v) => setState(() => _edadRango = v),
-                        onEdadValor: (v) => setState(() => _edadValor = v),
                       ),
               ),
             ],
@@ -500,12 +493,6 @@ class _AdaptiveList extends StatelessWidget {
   final _SortCampo? sortCampo;
   final bool sortAscending;
   final DataColumnSortCallback onSort;
-  final _EdadFiltroTipo? edadFiltroTipo;
-  final RangeValues edadRango;
-  final double edadValor;
-  final ValueChanged<_EdadFiltroTipo?> onEdadFiltroTipo;
-  final ValueChanged<RangeValues> onEdadRango;
-  final ValueChanged<double> onEdadValor;
 
   const _AdaptiveList({
     required this.bovinos,
@@ -513,12 +500,6 @@ class _AdaptiveList extends StatelessWidget {
     required this.sortCampo,
     required this.sortAscending,
     required this.onSort,
-    required this.edadFiltroTipo,
-    required this.edadRango,
-    required this.edadValor,
-    required this.onEdadFiltroTipo,
-    required this.onEdadRango,
-    required this.onEdadValor,
   });
 
   @override
@@ -532,12 +513,6 @@ class _AdaptiveList extends StatelessWidget {
             sortCampo: sortCampo,
             sortAscending: sortAscending,
             onSort: onSort,
-            edadFiltroTipo: edadFiltroTipo,
-            edadRango: edadRango,
-            edadValor: edadValor,
-            onEdadFiltroTipo: onEdadFiltroTipo,
-            onEdadRango: onEdadRango,
-            onEdadValor: onEdadValor,
           );
         }
         return _BovinosListView(bovinos: bovinos, onDelete: onDelete);
@@ -912,12 +887,6 @@ class _BovinosDataTable extends StatelessWidget {
   final _SortCampo? sortCampo;
   final bool sortAscending;
   final DataColumnSortCallback onSort;
-  final _EdadFiltroTipo? edadFiltroTipo;
-  final RangeValues edadRango;
-  final double edadValor;
-  final ValueChanged<_EdadFiltroTipo?> onEdadFiltroTipo;
-  final ValueChanged<RangeValues> onEdadRango;
-  final ValueChanged<double> onEdadValor;
 
   const _BovinosDataTable({
     required this.bovinos,
@@ -925,23 +894,7 @@ class _BovinosDataTable extends StatelessWidget {
     required this.sortCampo,
     required this.sortAscending,
     required this.onSort,
-    required this.edadFiltroTipo,
-    required this.edadRango,
-    required this.edadValor,
-    required this.onEdadFiltroTipo,
-    required this.onEdadRango,
-    required this.onEdadValor,
   });
-
-  void _showFiltroEdad(BuildContext context) => _mostrarFiltroEdad(
-        context,
-        tipo: edadFiltroTipo,
-        rango: edadRango,
-        valor: edadValor,
-        onTipo: onEdadFiltroTipo,
-        onRango: onEdadRango,
-        onValor: onEdadValor,
-      );
 
   @override
   Widget build(BuildContext context) {
@@ -964,29 +917,7 @@ class _BovinosDataTable extends StatelessWidget {
             DataColumn(label: const Text('Nombre'), onSort: onSort),
             DataColumn(label: const Text('Dueño'), onSort: onSort),
             const DataColumn(label: Text('Sexo')),
-            DataColumn(
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Edad'),
-                  const SizedBox(width: 2),
-                  GestureDetector(
-                    onTap: () => _showFiltroEdad(context),
-                    child: Icon(
-                      edadFiltroTipo != null
-                          ? Icons.filter_alt
-                          : Icons.filter_alt_outlined,
-                      size: 15,
-                      color: edadFiltroTipo != null
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                ],
-              ),
-              numeric: true,
-              onSort: onSort,
-            ),
+            DataColumn(label: const Text('Edad'), numeric: true, onSort: onSort),
             DataColumn(label: const Text('Estado'), onSort: onSort),
             const DataColumn(label: Text('Acciones')),
           ],
