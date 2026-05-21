@@ -371,9 +371,21 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 // ── Arete ID ────────────────────────────────────────────────
                 TextFormField(
                   controller: _areteCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Arete ID',
-                    prefixIcon: Icon(Icons.tag),
+                    prefixIcon: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Center(
+                        child: ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            IconTheme.of(context).color ?? Colors.black54,
+                            BlendMode.srcIn,
+                          ),
+                          child: const Text('🏷️', style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                    ),
                     helperText: 'Opcional — debe ser único',
                   ),
                   textCapitalization: TextCapitalization.characters,
@@ -396,9 +408,21 @@ class _BovinoFormScreenState extends ConsumerState<BovinoFormScreen> {
                 // ── Nombre ───────────────────────────────────────────────────
                 TextFormField(
                   controller: _nombreCtrl,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nombre',
-                    prefixIcon: Icon(Icons.pets),
+                    prefixIcon: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Center(
+                        child: ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            IconTheme.of(context).color ?? Colors.black54,
+                            BlendMode.srcIn,
+                          ),
+                          child: const Text('🐄', style: TextStyle(fontSize: 18)),
+                        ),
+                      ),
+                    ),
                     helperText: 'Opcional — debe ser único',
                   ),
                   textCapitalization: TextCapitalization.words,

@@ -632,8 +632,13 @@ class _HeroSection extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(Icons.pets,
-            size: 72, color: cs.onPrimaryContainer.withOpacity(0.35)),
+        child: ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            cs.onPrimaryContainer.withValues(alpha: 0.35),
+            BlendMode.srcIn,
+          ),
+          child: const Text('🐄', style: TextStyle(fontSize: 64)),
+        ),
       ),
     );
   }
