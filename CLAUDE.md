@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Setup
+
+Este proyecto usa **Flutter 3.44.0** gestionado por [FVM](https://fvm.app).
+
+```bash
+# Instalar FVM (si no lo tienes)
+dart pub global activate fvm
+
+# Instalar la versión de Flutter del proyecto
+fvm install
+
+# Verificar instalación
+fvm flutter --version
+```
+
 ## Commands
 
 Always use `fvm flutter` instead of `flutter` directly.
@@ -30,12 +45,12 @@ Feature-based structure under `lib/`:
 
 ```
 lib/
-├── app/           # MaterialApp.router + GoRouter (9 routes)
+├── app/           # MaterialApp.router + GoRouter (10 routes)
 ├── core/
 │   ├── database/  # Drift schema (13 tables), DAOs, platform connections
+│   │   └── seeds/ # Test data generator (debug only)
 │   ├── models/    # Cross-table JOIN models (e.g. BovinoWithDueno)
 │   ├── providers/ # Database singleton provider
-│   ├── seeds/     # Test data generator (debug only)
 │   └── utils/     # NoAccentFormatter (strips accents on input)
 └── features/
     ├── bovinos/   # Cattle: list, form, providers
@@ -45,10 +60,10 @@ lib/
 
 ### Database (Drift)
 
-`AppDatabase` in `lib/core/database/app_database.dart` defines 13 tables. Each table is a separate file under `lib/core/database/tables/`. Current schema version: 2 (v1→v2 recreated Lotes table to drop a CHECK constraint on `clave`, preserving data).
+`AppDatabase` in `lib/core/database/app_database.dart` defines 13 tables. Each table is a separate file under `lib/core/database/tables/`. Current schema version: 3 (v1→v2 recreated Lotes table to drop a CHECK constraint on `clave`; v2→v3 added nullable `numControl` column to Bovinos).
 
 **Core cattle & ownership:**
-- **Bovinos** — cattle record (areteId UNIQUE, nombre nullable+UNIQUE, sexo: M/H, estado: activo/vendido/muerto, loteId, razaId)
+- **Bovinos** — cattle record (areteId UNIQUE, numControl nullable, nombre nullable+UNIQUE, sexo: M/H, estado: activo/vendido/muerto, loteId, razaId)
 - **Pertenencia** — ownership history; `fechaFin IS NULL` = current owner
 - **Lotes** — lot categories; seeded with 5 records (R=Reemplazo, O=Ordeña, H=Horras, E=Engorda, C=Crías)
 - **Razas** — cattle breeds; seeded with 20 breeds (Angus, Hereford, etc.) on first DB creation
@@ -60,7 +75,7 @@ lib/
 - **Partos** — birth events
 - **RegistroReproductivo** — breeding events (tipo, fechaProbableParto, toroId)
 
-**Health & commerce:**
+**Health & commerce** (schema only — no DAO layer implemented for Vacunas/Tratamientos):
 - **Vacunas** — vaccination records (nombreVacuna, fechaAplicacion, proximaDosis)
 - **Tratamientos** — medical treatments (veterinario, fecha)
 - **Ventas** — auto-populated when bovino estado → "vendido"
@@ -77,6 +92,7 @@ After changing any table class or DAO, run `build_runner build` to regenerate `.
 - `upsertVenta()` — called automatically when estado changes to "vendido"
 - `deleteBovinoWithChildren()` — cascade deletes in FK-safe order: Vacunas/Tratamientos/Partos/Fotos/Ventas → RegistroReproductivo/Toros → Progenie → Pertenencia → Bovino
 - `deleteLoteClean()` — nullifies loteId on affected bovinos before deleting the lot
+- Reproduction: `upsertProgenie()`, `watchRegistrosByBovinoId()`, `insertRegistro()`, `updateRegistro()`, `deleteRegistro()`, `insertToro()`, `deleteToro()`, `watchToroByBovinoId()`, `watchAllTorosStream()`, `watchPartosByBovinoId()`, `insertParto()`, `updateParto()`, `deleteParto()`
 
 **DuenosDao** (`lib/core/database/daos/duenos_dao.dart`):
 - `watchAllDuenos()`, `getAllDuenos()` — ordered by nombre
@@ -91,7 +107,7 @@ Riverpod `StreamProvider`s in `lib/features/*/presentation/providers/` expose Dr
 
 ### Navigation
 
-`lib/app/router.dart` uses GoRouter with 9 routes. Edit forms receive the full model object (`BovinoWithDueno`, `Dueno`, `Lote`) via `extra` — not just an ID — to avoid a DB lookup on navigation.
+`lib/app/router.dart` uses GoRouter with 10 routes: list (`/`, `/duenos`, `/lotes`), new (`/bovinos/new`, `/duenos/new`, `/lotes/new`), edit (`/bovinos/:id`, `/duenos/:id`, `/lotes/:id`), and detail (`/bovinos/:id/detail`). Edit forms receive the full model object (`BovinoWithDueno`, `Dueno`, `Lote`) via `extra` — not just an ID — to avoid a DB lookup on navigation.
 
 ### UI Patterns
 
