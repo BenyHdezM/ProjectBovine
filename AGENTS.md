@@ -2,7 +2,7 @@
 
 ## Commands
 
-Always use `fvm flutter` instead of `flutter` directly. Flutter version is `3.41.9` (`.fvmrc`).
+Always use `fvm flutter` instead of `flutter` directly. Flutter version is `3.44.0` (`.fvmrc`).
 
 ```bash
 # Run the app
